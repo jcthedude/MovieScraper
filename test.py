@@ -20,6 +20,21 @@ def search_series(search_text):
         print(node.getElementsByTagName('FirstAired')[0].firstChild.data, sep='')
 
 
+def get_series_details(series_id):
+    url = "http://thetvdb.com/api/" + api_key + "/series/" + str(series_id) + "/all"
+
+    http = urllib3.PoolManager()
+    r = http.request('GET', url)
+    xml = minidom.parse(r)
+
+    for node in xml.getElementsByTagName('Series'):
+        print(node.getElementsByTagName('id')[0].firstChild.data, "-", sep='', end='')
+        print(node.getElementsByTagName('SeriesName')[0].firstChild.data, "-", sep='', end='')
+        print(node.getElementsByTagName('FirstAired')[0].firstChild.data, sep='')
+        print(node.getElementsByTagName('Genre')[0].firstChild.data.split("|")[1:-1])
+        print(node.getElementsByTagName('Status')[0].firstChild.data, sep='')
+
+
 def get_episode_details(series_id):
     url = "http://thetvdb.com/api/" + api_key + "/series/" + str(series_id) + "/all"
 
@@ -42,6 +57,7 @@ def main():
         search_series(search_text)
 
         series_id = input("Series ID: ")
+        get_series_details(series_id)
         get_episode_details(series_id)
     except IOError as e:
         print("I/O error({0}): {1}".format(e.errno, e.strerror))
