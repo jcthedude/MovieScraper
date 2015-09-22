@@ -3,7 +3,7 @@ import urllib3
 from xml.dom import minidom
 
 api_key = "58AE0E6345017543"
-##series_id = 79349
+#series_id = 79349
 
 
 def search_series(search_text):
