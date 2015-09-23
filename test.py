@@ -94,25 +94,32 @@ def get_art(series_id):
     r = http.request('GET', url)
     xml = minidom.parseString(r.data)
 
-    for node in xml.getElementsByTagName('Series'):
-        try:
-            name = node.getElementsByTagName('SeriesName')[0].firstChild.data
-        except AttributeError:
-            name = None
-        try:
-            banner = node.getElementsByTagName('banner')[0].firstChild.data
-        except AttributeError:
-            banner = None
-        try:
-            fanart = node.getElementsByTagName('fanart')[0].firstChild.data
-        except AttributeError:
-            fanart = None
-        try:
-            poster = node.getElementsByTagName('poster')[0].firstChild.data
-        except AttributeError:
-            poster = None
+    try:
+        for node in xml.getElementsByTagName('Series'):
+            try:
+                name = node.getElementsByTagName('SeriesName')[0].firstChild.data
+            except AttributeError:
+                name = None
+            try:
+                banner = node.getElementsByTagName('banner')[0].firstChild.data
+            except AttributeError:
+                banner = None
+            try:
+                fanart = node.getElementsByTagName('fanart')[0].firstChild.data
+            except AttributeError:
+                fanart = None
+            try:
+                poster = node.getElementsByTagName('poster')[0].firstChild.data
+            except AttributeError:
+                poster = None
+    except xml.parsers.expat.ExpatError:
+        print("No API page available")
+        name = None
+        banner = None
+        fanart = None
+        poster = None
 
-        return name, banner, fanart, poster
+    return name, banner, fanart, poster
 
 
 def main_select_update():
@@ -153,7 +160,8 @@ def main_bulk_update():
     try:
         connection = sql.connect(**db_config)
         cursor = connection.cursor()
-        cursor.execute("""SELECT id FROM series WHERE banner IS NULL""")
+        #cursor.execute("""SELECT id FROM series WHERE banner IS NULL""")
+        cursor.execute("""SELECT id FROM series WHERE id = 71128""")
 
         rows = cursor.fetchall()
 
