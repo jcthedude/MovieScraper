@@ -155,7 +155,7 @@ def main_bulk_update():
         cursor = connection.cursor()
         cursor.execute("""SELECT id FROM series WHERE banner IS NULL""")
 
-        rows = cursor.fetchmany(2)
+        rows = cursor.fetchall()
 
         for row in rows:
             series_id = row[0]
@@ -164,6 +164,7 @@ def main_bulk_update():
             name, banner, fanart, poster = get_art(series_id)
             db_update(str(series_id), name, banner, fanart, poster)
 
+        print("Updates complete!")
         cursor.close()
     except sql.Error as e:
         if e.errno == errorcode.ER_ACCESS_DENIED_ERROR:
