@@ -1,9 +1,31 @@
 import sys
 import urllib3
+import mysql.connector as sql
+from mysql.connector import errorcode
 from xml.dom import minidom
 
 api_key = "58AE0E6345017543"
-#series_id = 79349
+db_config = {
+  'user': 'slampana',
+  'password': 'Campana1',
+  'host': '212.47.227.68',
+  'database': 'tvdb',
+  'raise_on_warnings': True,
+}
+
+
+def db_select(connection, series_id):
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM series WHERE id = %s", (series_id,))
+
+    row = cursor.fetchone()
+
+    while row is not None:
+            print(row[1], "-", row[4], "-", row[8])
+            row = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
 
 
 def search_series(search_text):
@@ -64,6 +86,20 @@ def main():
     except:
         print("Unexpected error:", sys.exc_info()[0])
         raise
+
+    try:
+        connection = sql.connect(**db_config)
+        db_select(connection, str(series_id))
+    except sql.Error as e:
+        if e.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif e.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(e)
+    finally:
+        if connection:
+            connection.close()
 
 
 main()
