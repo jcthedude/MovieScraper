@@ -16,7 +16,7 @@ db_config = {
 
 def db_select(connection, series_id):
     cursor = connection.cursor()
-    cursor.execute("SELECT * FROM series WHERE id = %s", (series_id,))
+    cursor.execute("""SELECT * FROM series WHERE id = %s""", (series_id,))
 
     row = cursor.fetchone()
 
@@ -25,7 +25,21 @@ def db_select(connection, series_id):
             row = cursor.fetchone()
 
     cursor.close()
-    connection.close()
+
+
+def db_update(series_id, name, banner, fanart, poster):
+    print("Updating: ", series_id, "-", name)
+    print(banner, fanart, poster)
+
+    connection = sql.connect(**db_config)
+    cursor = connection.cursor()
+
+    cursor.execute("""UPDATE series SET banner = %s, fanart = %s, poster = %s WHERE id = %s""", (banner, fanart
+                                                                                                 , poster, series_id))
+
+    connection.commit()
+    print("Done updating: ", series_id, "-", name)
+    cursor.close()
 
 
 def search_series(search_text):
@@ -73,7 +87,35 @@ def get_episode_details(series_id):
             print(node.getElementsByTagName('EpisodeName')[0].firstChild.data, sep='')
 
 
-def main():
+def get_art(series_id):
+    url = "http://thetvdb.com/api/" + api_key + "/series/" + str(series_id) + "/all"
+
+    http = urllib3.PoolManager()
+    r = http.request('GET', url)
+    xml = minidom.parseString(r.data)
+
+    for node in xml.getElementsByTagName('Series'):
+        try:
+            name = node.getElementsByTagName('SeriesName')[0].firstChild.data
+        except AttributeError:
+            name = None
+        try:
+            banner = node.getElementsByTagName('banner')[0].firstChild.data
+        except AttributeError:
+            banner = None
+        try:
+            fanart = node.getElementsByTagName('fanart')[0].firstChild.data
+        except AttributeError:
+            fanart = None
+        try:
+            poster = node.getElementsByTagName('poster')[0].firstChild.data
+        except AttributeError:
+            poster = None
+
+        return name, banner, fanart, poster
+
+
+def main_select_update():
     try:
         search_text = input("Series Name: ")
         search_series(search_text)
@@ -81,6 +123,7 @@ def main():
         series_id = input("Series ID: ")
         get_series_details(series_id)
         get_episode_details(series_id)
+        get_art(series_id)
     except IOError as e:
         print("I/O error({0}): {1}".format(e.errno, e.strerror))
     except:
@@ -89,7 +132,11 @@ def main():
 
     try:
         connection = sql.connect(**db_config)
+
         db_select(connection, str(series_id))
+
+        name, banner, fanart, poster = get_art(series_id)
+        db_update(str(series_id), name, banner, fanart, poster)
     except sql.Error as e:
         if e.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             print("Something is wrong with your user name or password")
@@ -102,4 +149,32 @@ def main():
             connection.close()
 
 
-main()
+def main_bulk_update():
+    try:
+        connection = sql.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("""SELECT id FROM series WHERE banner IS NULL""")
+
+        rows = cursor.fetchmany(2)
+
+        for row in rows:
+            series_id = row[0]
+            get_art(series_id)
+
+            name, banner, fanart, poster = get_art(series_id)
+            db_update(str(series_id), name, banner, fanart, poster)
+
+        cursor.close()
+    except sql.Error as e:
+        if e.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif e.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(e)
+    finally:
+        if connection:
+            connection.close()
+
+
+main_bulk_update()
