@@ -34,7 +34,7 @@ def search_series(search_text):
 
     http = urllib3.PoolManager()
     r = http.request('GET', url)
-    xml = minidom.parse(r)
+    xml = minidom.parseString(r.data)
 
     for node in xml.getElementsByTagName('Series'):
         print(node.getElementsByTagName('seriesid')[0].firstChild.data, "-", sep='', end='')
@@ -47,7 +47,7 @@ def get_series_details(series_id):
 
     http = urllib3.PoolManager()
     r = http.request('GET', url)
-    xml = minidom.parse(r)
+    xml = minidom.parseString(r.data)
 
     for node in xml.getElementsByTagName('Series'):
         print(node.getElementsByTagName('id')[0].firstChild.data, "-", sep='', end='')
@@ -62,7 +62,7 @@ def get_episode_details(series_id):
 
     http = urllib3.PoolManager()
     r = http.request('GET', url)
-    xml = minidom.parse(r)
+    xml = minidom.parseString(r.data)
 
     for node in xml.getElementsByTagName('Episode'):
         season = int(node.getElementsByTagName('SeasonNumber')[0].firstChild.data)
