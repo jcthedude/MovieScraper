@@ -162,8 +162,7 @@ def main_bulk_art_update():
     try:
         connection = sql.connect(**db_config)
         cursor = connection.cursor()
-        # cursor.execute("""SELECT id FROM series WHERE banner IS NULL""")
-        cursor.execute("""SELECT id FROM series WHERE banner IS NULL AND id = 79676""")
+        cursor.execute("""SELECT id FROM series""")
 
         rows = cursor.fetchall()
 
