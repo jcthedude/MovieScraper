@@ -34,8 +34,7 @@ def db_update(series_id, name, banner, fanart, poster):
     connection = sql.connect(**db_config)
     cursor = connection.cursor()
 
-    cursor.execute("""UPDATE series SET banner = %s, fanart = %s, poster = %s WHERE id = %s""", (banner, fanart
-                                                                                                 , poster, series_id))
+    cursor.execute("""UPDATE series SET banner = %s, fanart = %s, poster = %s, lastUpdated = CURRENT_TIMESTAMP WHERE id = %s""", (banner, fanart, poster, series_id))
 
     connection.commit()
     print("Done updating: ", series_id, "-", name)
@@ -92,9 +91,9 @@ def get_art(series_id):
 
     http = urllib3.PoolManager()
     r = http.request('GET', url)
-    xml = minidom.parseString(r.data)
+    if r.status != 404:
+        xml = minidom.parseString(r.data)
 
-    try:
         for node in xml.getElementsByTagName('Series'):
             try:
                 name = node.getElementsByTagName('SeriesName')[0].firstChild.data
@@ -112,14 +111,11 @@ def get_art(series_id):
                 poster = node.getElementsByTagName('poster')[0].firstChild.data
             except AttributeError:
                 poster = None
-    except xml.parsers.expat.ExpatError:
-        print("No API page available")
-        name = None
-        banner = None
-        fanart = None
-        poster = None
 
-    return name, banner, fanart, poster
+            return name, banner, fanart, poster
+    else:
+        print("No API page available")
+        return None, None, None, None
 
 
 def main_select_update():
@@ -160,14 +156,12 @@ def main_bulk_update():
     try:
         connection = sql.connect(**db_config)
         cursor = connection.cursor()
-        #cursor.execute("""SELECT id FROM series WHERE banner IS NULL""")
-        cursor.execute("""SELECT id FROM series WHERE id = 71128""")
+        cursor.execute("""SELECT id FROM series WHERE banner IS NULL""")
 
         rows = cursor.fetchall()
 
         for row in rows:
             series_id = row[0]
-            get_art(series_id)
 
             name, banner, fanart, poster = get_art(series_id)
             db_update(str(series_id), name, banner, fanart, poster)
