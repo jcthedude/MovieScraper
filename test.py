@@ -91,7 +91,7 @@ def get_art(series_id):
 
     http = urllib3.PoolManager()
     r = http.request('GET', url)
-    if r.status != 404:
+    try:
         xml = minidom.parseString(r.data)
 
         for node in xml.getElementsByTagName('Series'):
@@ -113,9 +113,10 @@ def get_art(series_id):
                 poster = None
 
             return name, banner, fanart, poster
-    else:
-        print("No API page available")
+    except:
+        print("Error with API page")
         return None, None, None, None
+        pass
 
 
 def main_select_update():
@@ -156,7 +157,7 @@ def main_bulk_update():
     try:
         connection = sql.connect(**db_config)
         cursor = connection.cursor()
-        cursor.execute("""SELECT id FROM series WHERE banner IS NULL""")
+        cursor.execute("""SELECT id FROM series WHERE banner IS NULL AND id > 79676""")
 
         rows = cursor.fetchall()
 
