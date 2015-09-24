@@ -3,6 +3,7 @@ import urllib3
 import mysql.connector as sql
 from mysql.connector import errorcode
 from xml.dom import minidom
+from xml.parsers.expat import ExpatError
 
 api_key = "58AE0E6345017543"
 db_config = {
@@ -91,32 +92,36 @@ def get_art(series_id):
 
     http = urllib3.PoolManager()
     r = http.request('GET', url)
-    try:
-        xml = minidom.parseString(r.data)
 
-        for node in xml.getElementsByTagName('Series'):
-            try:
-                name = node.getElementsByTagName('SeriesName')[0].firstChild.data
-            except AttributeError:
-                name = None
-            try:
-                banner = node.getElementsByTagName('banner')[0].firstChild.data
-            except AttributeError:
-                banner = None
-            try:
-                fanart = node.getElementsByTagName('fanart')[0].firstChild.data
-            except AttributeError:
-                fanart = None
-            try:
-                poster = node.getElementsByTagName('poster')[0].firstChild.data
-            except AttributeError:
-                poster = None
+    if r.status != 404:
+        try:
+            xml = minidom.parseString(r.data)
 
-            return name, banner, fanart, poster
-    except:
-        print("Error with API page")
+            for node in xml.getElementsByTagName('Series'):
+                try:
+                    name = node.getElementsByTagName('SeriesName')[0].firstChild.data
+                except AttributeError:
+                    name = None
+                try:
+                    banner = node.getElementsByTagName('banner')[0].firstChild.data
+                except AttributeError:
+                    banner = None
+                try:
+                    fanart = node.getElementsByTagName('fanart')[0].firstChild.data
+                except AttributeError:
+                    fanart = None
+                try:
+                    poster = node.getElementsByTagName('poster')[0].firstChild.data
+                except AttributeError:
+                    poster = None
+
+                return name, banner, fanart, poster
+        except ExpatError as e:
+            print("ERROR WITH API PAGE: ", e)
+            return None, None, None, None
+            pass
+    else:
         return None, None, None, None
-        pass
 
 
 def main_select_update():
@@ -153,11 +158,12 @@ def main_select_update():
             connection.close()
 
 
-def main_bulk_update():
+def main_bulk_art_update():
     try:
         connection = sql.connect(**db_config)
         cursor = connection.cursor()
-        cursor.execute("""SELECT id FROM series WHERE banner IS NULL AND id > 79676""")
+        # cursor.execute("""SELECT id FROM series WHERE banner IS NULL""")
+        cursor.execute("""SELECT id FROM series WHERE banner IS NULL AND id = 79676""")
 
         rows = cursor.fetchall()
 
@@ -167,18 +173,14 @@ def main_bulk_update():
             name, banner, fanart, poster = get_art(series_id)
             db_update(str(series_id), name, banner, fanart, poster)
 
-        print("Updates complete!")
+        print("ALL UPDATES COMPLETE!!!")
         cursor.close()
     except sql.Error as e:
-        if e.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-            print("Something is wrong with your user name or password")
-        elif e.errno == errorcode.ER_BAD_DB_ERROR:
-            print("Database does not exist")
-        else:
-            print(e)
+        print("ERROR WITH SQL CONNECTION: ", e)
     finally:
         if connection:
             connection.close()
 
 
-main_bulk_update()
+# main_select_update()
+main_bulk_art_update()
