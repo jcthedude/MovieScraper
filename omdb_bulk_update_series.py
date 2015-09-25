@@ -16,7 +16,13 @@ db_config = {
 def db_update(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type):
     print("Updating: ", imdb_id, "-", imdb_title)
 
-    imdb_votes = int(str.replace(imdb_votes, ",", ""))
+    if imdb_votes == "N/A":
+        imdb_votes = 0
+    else:
+        imdb_votes = int(str.replace(imdb_votes, ",", ""))
+
+    if imdb_rating == "N/A":
+        imdb_rating = 0
 
     connection = sql.connect(**db_config)
     cursor = connection.cursor()
@@ -40,17 +46,50 @@ def get_omdb_data(imdb_id):
         try:
             xml = minidom.parseString(r.data)
 
-            imdb_title = xml.getElementsByTagName("movie")[0].getAttribute("title")
-            imdb_rating = xml.getElementsByTagName("movie")[0].getAttribute("imdbRating")
-            imdb_votes = xml.getElementsByTagName("movie")[0].getAttribute("imdbVotes")
-            imdb_runtime = xml.getElementsByTagName("movie")[0].getAttribute("runtime")
-            imdb_year = xml.getElementsByTagName("movie")[0].getAttribute("year")
-            imdb_genre = xml.getElementsByTagName("movie")[0].getAttribute("genre")
-            imdb_plot = xml.getElementsByTagName("movie")[0].getAttribute("plot")
-            imdb_country = xml.getElementsByTagName("movie")[0].getAttribute("country")
-            imdb_awards = xml.getElementsByTagName("movie")[0].getAttribute("awards")
-            imd_poster = xml.getElementsByTagName("movie")[0].getAttribute("poster")
-            imdb_type = xml.getElementsByTagName("movie")[0].getAttribute("type")
+            try:
+                imdb_title = xml.getElementsByTagName("movie")[0].getAttribute("title")
+            except AttributeError:
+                imdb_title = None
+            try:
+                imdb_rating = xml.getElementsByTagName("movie")[0].getAttribute("imdbRating")
+            except AttributeError:
+                imdb_rating = None
+            try:
+                imdb_votes = xml.getElementsByTagName("movie")[0].getAttribute("imdbVotes")
+            except AttributeError:
+                imdb_votes = None
+            try:
+                imdb_runtime = xml.getElementsByTagName("movie")[0].getAttribute("runtime")
+            except AttributeError:
+                imdb_runtime = None
+            try:
+                imdb_year = xml.getElementsByTagName("movie")[0].getAttribute("year")
+            except AttributeError:
+                imdb_year = None
+            try:
+                imdb_genre = xml.getElementsByTagName("movie")[0].getAttribute("genre")
+            except AttributeError:
+                imdb_genre = None
+            try:
+                imdb_plot = xml.getElementsByTagName("movie")[0].getAttribute("plot")
+            except AttributeError:
+                imdb_plot = None
+            try:
+                imdb_country = xml.getElementsByTagName("movie")[0].getAttribute("country")
+            except AttributeError:
+                imdb_country = None
+            try:
+                imdb_awards = xml.getElementsByTagName("movie")[0].getAttribute("awards")
+            except AttributeError:
+                imdb_awards = None
+            try:
+                imd_poster = xml.getElementsByTagName("movie")[0].getAttribute("poster")
+            except AttributeError:
+                imd_poster = None
+            try:
+                imdb_type = xml.getElementsByTagName("movie")[0].getAttribute("type")
+            except AttributeError:
+                imdb_type = None
 
             return imdb_title, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type
         except ExpatError as e:
