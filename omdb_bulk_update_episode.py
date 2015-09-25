@@ -13,9 +13,8 @@ db_config = {
 }
 
 
-def db_update(imdb_title, imdb_series_id, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type):
-    print("Updating: ", imdb_id, "-", imdb_title)
-
+def db_insert(imdb_title, imdb_series_id, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type):
+    print("Starting on: ", imdb_id, "-", imdb_title)
     if imdb_votes == "N/A":
         imdb_votes = 0
     elif imdb_votes is None:
@@ -28,17 +27,49 @@ def db_update(imdb_title, imdb_series_id, imdb_id, imdb_rating, imdb_votes, imdb
 
     connection = sql.connect(**db_config)
     cursor = connection.cursor()
-
     cursor.execute("""INSERT INTO episode_staging_omdb SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, CURRENT_TIMESTAMP""", (imdb_id, imdb_series_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type))
 
     connection.commit()
-    print("Done updating: ", imdb_id, "-", imdb_title)
+    print("Finished with: ", imdb_id, "-", imdb_title)
     cursor.close()
+    connection.close()
 
+
+def db_update():
+    print("Starting update...")
+    connection1 = sql.connect(**db_config)
+    cursor1 = connection1.cursor()
+    cursor1.execute("""UPDATE episode_staging_omdb AS a
+        INNER JOIN episode AS b ON b.imdbId = a.imdbId
+        SET b.imdbSeriesId = a.imdbSeriesId
+        ,b.imdbRating = a.imdbRating
+        ,b.imdbVotes = a.imdbVotes
+        ,b.imdbRuntime = a.imdbRuntime
+        ,b.imdbYear = a.imdbYear
+        ,b.imdbGenre = a.imdbGenre
+        ,b.imdbPlot = a.imdbPlot
+        ,b.imdbCountry = a.imdbCountry
+        ,b.imdbAwards = a.imdbAwards
+        ,b.imdbPoster = a.imdbPoster
+        ,b.imdbType = a.imdbType
+        ,b.omdbFetched = a.omdbFetched
+        ,b.lastUpdated = a.lastUpdated""")
+    connection1.commit()
+    cursor1.close()
+    connection1.close()
+    print("UPDATE COMPLETE!!!: ")
+
+    print("Starting delete...")
+    connection2 = sql.connect(**db_config)
+    cursor2 = connection2.cursor()
+    cursor2.execute("""TRUNCATE TABLE episode_staging_omdb""")
+    connection2.commit()
+    cursor1.close()
+    connection2.close()
+    print("DELETE COMPLETE!!!: ")
 
 def get_omdb_data(imdb_id):
     url = "http://www.omdbapi.com/?i=" + imdb_id + "&plot=full&r=xml"
-
     http = urllib3.PoolManager()
     r = http.request('GET', url)
 
@@ -74,27 +105,24 @@ def main_bulk_update():
     try:
         connection = sql.connect(**db_config)
         cursor = connection.cursor()
-
         # Add filters in this SELECT statement to determine the rows to be updated
         cursor.execute("""SELECT DISTINCT imdbId FROM episode WHERE imdbId IS NOT NULL AND omdbFetched = 0""")
 
         rows = cursor.fetchall()
-
         for row in rows:
             imdb_id = row[0]
 
             imdb_title, imdb_series_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type = get_omdb_data(imdb_id)
-            db_update(imdb_title, imdb_series_id, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type)
+            db_insert(imdb_title, imdb_series_id, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type)
 
-        print("ALL UPDATES COMPLETE!!!")
+        print("INSERT COMPLETE!!!")
+        db_update()
         cursor.close()
+        connection.close()
     except sql.Error as e:
         print("ERROR WITH SQL CONNECTION: ", e)
     except ExpatError as e:
             print("ERROR WITH API PAGE: ", e)
-    finally:
-        if connection:
-            connection.close()
 
 
 main_bulk_update()
