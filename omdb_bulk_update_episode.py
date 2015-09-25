@@ -29,9 +29,7 @@ def db_update(imdb_title, imdb_series_id, imdb_id, imdb_rating, imdb_votes, imdb
     connection = sql.connect(**db_config)
     cursor = connection.cursor()
 
-    cursor.execute("""UPDATE episode SET imdbSeriesId = %s, imdbRating = %s, imdbVotes = %s, imdbRuntime = %s, imdbYear = %s
-      , imdbGenre = %s, imdbPlot = %s, imdbCountry = %s, imdbAwards = %s, imdPoster = %s, imdbType = %s
-      , omdbFetched = 1, lastUpdated = CURRENT_TIMESTAMP WHERE imdbId = %s""", (imdb_series_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type, imdb_id))
+    cursor.execute("""INSERT INTO episode_staging_omdb SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, CURRENT_TIMESTAMP""", (imdb_id, imdb_series_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type))
 
     connection.commit()
     print("Done updating: ", imdb_id, "-", imdb_title)
@@ -63,11 +61,11 @@ def get_omdb_data(imdb_id):
 
                 return imdb_title, imdb_series_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type
             except IndexError as e:
-                print(imdb_id, "-INDEX ERROR: ", e)
+                print(imdb_id, "- INDEX ERROR: ", e)
                 return None, None, None, None, None, None, None, None, None, None, None
                 pass
         except ExpatError as e:
-            print(imdb_id, "-EXPAT ERROR: ", e)
+            print(imdb_id, "- EXPAT ERROR: ", e)
             return None, None, None, None, None, None, None, None, None, None, None
             pass
 
@@ -78,7 +76,7 @@ def main_bulk_update():
         cursor = connection.cursor()
 
         # Add filters in this SELECT statement to determine the rows to be updated
-        cursor.execute("""SELECT imdbId FROM episode WHERE imdbId IS NOT NULL AND omdbFetched = 0""")
+        cursor.execute("""SELECT DISTINCT imdbId FROM episode WHERE imdbId IS NOT NULL AND omdbFetched = 0""")
 
         rows = cursor.fetchall()
 
