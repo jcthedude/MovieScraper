@@ -13,7 +13,7 @@ db_config = {
 }
 
 
-def db_update(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type):
+def db_update(imdb_title, imdb_series_id, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type):
     print("Updating: ", imdb_id, "-", imdb_title)
 
     if imdb_votes == "N/A":
@@ -27,9 +27,9 @@ def db_update(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_y
     connection = sql.connect(**db_config)
     cursor = connection.cursor()
 
-    cursor.execute("""UPDATE series SET imdbRating = %s, imdbVotes = %s, imdbRuntime = %s, imdbYear = %s
+    cursor.execute("""UPDATE episode SET imdbSeriesId = %s, imdbRating = %s, imdbVotes = %s, imdbRuntime = %s, imdbYear = %s
       , imdbGenre = %s, imdbPlot = %s, imdbCountry = %s, imdbAwards = %s, imdPoster = %s, imdbType = %s
-      , omdbFetched = 1, lastUpdated = CURRENT_TIMESTAMP WHERE imdbId = %s""", (imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type, imdb_id))
+      , omdbFetched = 1, lastUpdated = CURRENT_TIMESTAMP WHERE imdbId = %s""", (imdb_series_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type, imdb_id))
 
     connection.commit()
     print("Done updating: ", imdb_id, "-", imdb_title)
@@ -47,6 +47,7 @@ def get_omdb_data(imdb_id):
             xml = minidom.parseString(r.data)
             try:
                 imdb_title = xml.getElementsByTagName("movie")[0].getAttribute("title")
+                imdb_series_id = xml.getElementsByTagName("movie")[0].getAttribute("seriesID")
                 imdb_rating = xml.getElementsByTagName("movie")[0].getAttribute("imdbRating")
                 imdb_votes = xml.getElementsByTagName("movie")[0].getAttribute("imdbVotes")
                 imdb_runtime = xml.getElementsByTagName("movie")[0].getAttribute("runtime")
@@ -58,14 +59,14 @@ def get_omdb_data(imdb_id):
                 imd_poster = xml.getElementsByTagName("movie")[0].getAttribute("poster")
                 imdb_type = xml.getElementsByTagName("movie")[0].getAttribute("type")
 
-                return imdb_title, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type
+                return imdb_title, imdb_series_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type
             except IndexError as e:
-                    print(imdb_id, "-INDEX ERROR: ", e)
-                    return None, None, None, None, None, None, None, None, None, None, None
-                    pass
+                print(imdb_id, "-INDEX ERROR: ", e)
+                return None, None, None, None, None, None, None, None, None, None, None
+                pass
         except ExpatError as e:
             print(imdb_id, "-EXPAT ERROR: ", e)
-            return None, None, None, None, None, None, None, None, None, None
+            return None, None, None, None, None, None, None, None, None, None, None
             pass
 
 
@@ -75,15 +76,15 @@ def main_bulk_update():
         cursor = connection.cursor()
 
         # Add filters in this SELECT statement to determine the rows to be updated
-        cursor.execute("""SELECT imdbId FROM series WHERE imdbId IS NOT NULL AND omdbFetched = 0""")
+        cursor.execute("""SELECT imdbId FROM episode WHERE imdbId IS NOT NULL AND omdbFetched = 0""")
 
         rows = cursor.fetchall()
 
         for row in rows:
             imdb_id = row[0]
 
-            imdb_title, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type = get_omdb_data(imdb_id)
-            db_update(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type)
+            imdb_title, imdb_series_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type = get_omdb_data(imdb_id)
+            db_update(imdb_title, imdb_series_id, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type)
 
         print("ALL UPDATES COMPLETE!!!")
         cursor.close()
