@@ -20,7 +20,8 @@ def db_update(series_id, name, banner, fanart, poster):
     connection = sql.connect(**db_config)
     cursor = connection.cursor()
 
-    cursor.execute("""UPDATE series SET banner = %s, fanart = %s, poster = %s, lastUpdated = CURRENT_TIMESTAMP WHERE id = %s""", (banner, fanart, poster, series_id))
+    cursor.execute("""UPDATE series SET banner = %s, fanart = %s, poster = %s, tvdbFetched = 1
+      , lastUpdated = CURRENT_TIMESTAMP WHERE id = %s""", (banner, fanart, poster, series_id))
 
     connection.commit()
     print("Done updating: ", series_id, "-", name)
