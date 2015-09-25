@@ -18,6 +18,8 @@ def db_update(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_y
 
     if imdb_votes == "N/A":
         imdb_votes = 0
+    elif imdb_votes is None:
+        imdb_votes = None
     else:
         imdb_votes = int(str.replace(imdb_votes, ",", ""))
 
