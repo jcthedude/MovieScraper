@@ -39,35 +39,13 @@ def db_insert(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_y
 
 def db_update():
     print("Starting update...")
-    connection1 = sql.connect(**db_config)
-    cursor1 = connection1.cursor()
-    cursor1.execute("""UPDATE series_staging_omdb AS a
-        INNER JOIN series AS b ON b.imdbId = a.imdbId
-        SET b.imdbRating = a.imdbRating
-        ,b.imdbVotes = a.imdbVotes
-        ,b.imdbRuntime = a.imdbRuntime
-        ,b.imdbYear = a.imdbYear
-        ,b.imdbGenre = a.imdbGenre
-        ,b.imdbPlot = a.imdbPlot
-        ,b.imdbCountry = a.imdbCountry
-        ,b.imdbAwards = a.imdbAwards
-        ,b.imdbPoster = a.imdbPoster
-        ,b.imdbType = a.imdbType
-        ,b.omdbFetched = a.omdbFetched
-        ,b.lastUpdated = a.lastUpdated""")
-    connection1.commit()
-    cursor1.close()
-    connection1.close()
+    connection = sql.connect(**db_config)
+    cursor = connection.cursor()
+    cursor.execute("""CALL update_series_omdb()""")
+    connection.commit()
+    cursor.close()
+    connection.close()
     print("UPDATE COMPLETE!!!: ")
-
-    print("Starting delete...")
-    connection2 = sql.connect(**db_config)
-    cursor2 = connection2.cursor()
-    cursor2.execute("""TRUNCATE TABLE series_staging_omdb""")
-    connection2.commit()
-    cursor1.close()
-    connection2.close()
-    print("DELETE COMPLETE!!!: ")
 
 
 def get_omdb_data(imdb_id):
