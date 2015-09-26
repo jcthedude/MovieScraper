@@ -7,7 +7,7 @@ api_key = "58AE0E6345017543"
 db_config = {
   'user': 'slampana',
   'password': 'Campana1',
-  'host': '212.47.227.68',
+  'host': '107.170.244.175',
   'database': 'tvdb',
   'raise_on_warnings': True,
 }
