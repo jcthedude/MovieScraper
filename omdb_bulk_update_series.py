@@ -13,7 +13,7 @@ db_config = {
 }
 
 
-def db_insert(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type):
+def db_insert(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imdb_poster, imdb_type):
     print("Starting on: ", imdb_id, "-", imdb_title)
 
     if imdb_votes == "N/A":
@@ -29,7 +29,7 @@ def db_insert(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_y
     connection = sql.connect(**db_config)
     cursor = connection.cursor()
 
-    cursor.execute("""INSERT INTO series_staging_omdb SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, CURRENT_TIMESTAMP""", (imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type))
+    cursor.execute("""INSERT INTO series_staging_omdb SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, CURRENT_TIMESTAMP""", (imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imdb_poster, imdb_type))
 
     connection.commit()
     print("Finished with: ", imdb_id, "-", imdb_title)
@@ -50,35 +50,39 @@ def db_update():
 
 def get_omdb_data(imdb_id):
     url = "http://www.omdbapi.com/?i=" + imdb_id + "&plot=full&r=xml"
-
+    print("Url: ", url)
     http = urllib3.PoolManager()
     r = http.request('GET', url)
 
     if r.status != 404:
         try:
             xml = minidom.parseString(r.data)
-            try:
-                imdb_title = xml.getElementsByTagName("movie")[0].getAttribute("title")
-                imdb_rating = xml.getElementsByTagName("movie")[0].getAttribute("imdbRating")
-                imdb_votes = xml.getElementsByTagName("movie")[0].getAttribute("imdbVotes")
-                imdb_runtime = xml.getElementsByTagName("movie")[0].getAttribute("runtime")
-                imdb_year = xml.getElementsByTagName("movie")[0].getAttribute("year")
-                imdb_genre = xml.getElementsByTagName("movie")[0].getAttribute("genre")
-                imdb_plot = xml.getElementsByTagName("movie")[0].getAttribute("plot")
-                imdb_country = xml.getElementsByTagName("movie")[0].getAttribute("country")
-                imdb_awards = xml.getElementsByTagName("movie")[0].getAttribute("awards")
-                imd_poster = xml.getElementsByTagName("movie")[0].getAttribute("poster")
-                imdb_type = xml.getElementsByTagName("movie")[0].getAttribute("type")
+            if xml.getElementsByTagName("root")[0].getAttribute("response") == "True":
+                try:
+                    imdb_title = xml.getElementsByTagName("movie")[0].getAttribute("title")
+                    imdb_rating = xml.getElementsByTagName("movie")[0].getAttribute("imdbRating")
+                    imdb_votes = xml.getElementsByTagName("movie")[0].getAttribute("imdbVotes")
+                    imdb_runtime = xml.getElementsByTagName("movie")[0].getAttribute("runtime")
+                    imdb_year = xml.getElementsByTagName("movie")[0].getAttribute("year")
+                    imdb_genre = xml.getElementsByTagName("movie")[0].getAttribute("genre")
+                    imdb_plot = xml.getElementsByTagName("movie")[0].getAttribute("plot")
+                    imdb_country = xml.getElementsByTagName("movie")[0].getAttribute("country")
+                    imdb_awards = xml.getElementsByTagName("movie")[0].getAttribute("awards")
+                    imdb_poster = xml.getElementsByTagName("movie")[0].getAttribute("poster")
+                    imdb_type = xml.getElementsByTagName("movie")[0].getAttribute("type")
 
-                return imdb_title, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type
-            except IndexError as e:
-                    print(imdb_id, "- INDEX ERROR: ", e)
-                    return None, None, None, None, None, None, None, None, None, None, None
-                    pass
+                    return imdb_title, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imdb_poster, imdb_type
+                except IndexError as e:
+                        print(imdb_id, "- INDEX ERROR: ", e)
+                        return None, None, None, None, None, None, None, None, None, None, None
+                        pass
+            else:
+                print(xml.getElementsByTagName("error")[0].firstChild.data)
+                return None, None, None, None, None, None, None, None, None, None, None
         except ExpatError as e:
-            print(imdb_id, "- EXPAT ERROR: ", e)
-            return None, None, None, None, None, None, None, None, None, None
             pass
+            print(imdb_id, "- EXPAT ERROR: ", e)
+            return None, None, None, None, None, None, None, None, None, None, None
 
 
 def main_bulk_update():
@@ -94,8 +98,8 @@ def main_bulk_update():
         for row in rows:
             imdb_id = row[0]
 
-            imdb_title, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type = get_omdb_data(imdb_id)
-            db_insert(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imd_poster, imdb_type)
+            imdb_title, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imdb_poster, imdb_type = get_omdb_data(imdb_id)
+            db_insert(imdb_title, imdb_id, imdb_rating, imdb_votes, imdb_runtime, imdb_year, imdb_genre, imdb_plot, imdb_country, imdb_awards, imdb_poster, imdb_type)
 
         print("INSERT COMPLETE!!!")
         db_update()
