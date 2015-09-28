@@ -99,7 +99,7 @@ def main_bulk_update():
         cursor = connection.cursor()
 
         # Add filters in this SELECT statement to determine the rows to be updated
-        cursor.execute("""SELECT DISTINCT imdbId FROM episode WHERE imdbId IS NOT NULL AND omdbFetched = 0 LIMIT 100000""")
+        cursor.execute("""SELECT DISTINCT imdbId FROM episode WHERE imdbId IS NOT NULL AND omdbFetched = 0""")
         rows = cursor.fetchall()
         for row in rows:
             imdb_id = row[0]
