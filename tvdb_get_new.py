@@ -320,10 +320,10 @@ def episode_update():
 
 def main_get_new():
     start_time = datetime.now()
-    # get_new_ids(db_select_timestamp())
-    # print("Done getting new series and episodes...")
-    # series_update()
-    # print("Done inserting new series...")
+    get_new_ids(db_select_timestamp())
+    print("Done getting new series and episodes...")
+    series_update()
+    print("Done inserting new series...")
     episode_update()
     print("Done inserting new episodes...")
     end_time = datetime.now()
