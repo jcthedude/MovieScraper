@@ -77,6 +77,26 @@ def db_update_series(series_values):
         connection.close()
 
 
+def db_update_episode(episode_values):
+    print("Updating: ", episode_values['id'])
+    if episode_values['id'] is None or episode_values['name'] is None or episode_values['seriesId'] is None\
+        or episode_values['seasonId'] is None or episode_values['seasonNumber'] is None\
+        or episode_values['episodeNumber'] is None:
+        print("Skipping...no episode id, name, seriesId, seasonId, seasonNumber or episodeNumber.")
+    else:
+        connection = sql.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("""INSERT INTO episode_staging_tvdb SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            , 1, CURRENT_TIMESTAMP""", (episode_values['id'], episode_values['seriesId']
+            , episode_values['seasonId'], episode_values['seasonNumber'], episode_values['episodeNumber']
+            , episode_values['name'], episode_values['overview'], episode_values['firstAired'], episode_values['guest']
+            , episode_values['director'], episode_values['writer'], episode_values['image'], episode_values['imdbId']))
+        connection.commit()
+        print("Done updating: ", episode_values['id'])
+        cursor.close()
+        connection.close()
+
+
 def get_new_ids(last_updated):
     url = "http://thetvdb.com/api/Updates.php?type=all&time=" + str(last_updated)
     http = urllib3.PoolManager()
@@ -189,6 +209,75 @@ def get_series_details(series_id):
             print("ERROR WITH API PAGE: ", e)
 
 
+def get_episode_details(episode_id):
+    episode_values = {}
+    url = "http://thetvdb.com/api/" + api_key + "/episodes/" + str(episode_id)
+    http = urllib3.PoolManager()
+    r = http.request('GET', url)
+
+    if r.status != 404:
+        try:
+            xml = minidom.parseString(r.data)
+
+            for node in xml.getElementsByTagName('Episode'):
+                try:
+                    episode_values['id'] = node.getElementsByTagName('id')[0].firstChild.data
+                except AttributeError:
+                    episode_values['id'] = None
+                try:
+                    episode_values['seriesId'] = node.getElementsByTagName('seriesid')[0].firstChild.data
+                except AttributeError:
+                    episode_values['seriesId'] = None
+                try:
+                    episode_values['seasonId'] = node.getElementsByTagName('seasonid')[0].firstChild.data
+                except AttributeError:
+                    episode_values['seasonId'] = None
+                try:
+                    episode_values['seasonNumber'] = node.getElementsByTagName('SeasonNumber')[0].firstChild.data
+                except AttributeError:
+                    episode_values['seasonNumber'] = None
+                try:
+                    episode_values['episodeNumber'] = node.getElementsByTagName('EpisodeNumber')[0].firstChild.data
+                except AttributeError:
+                    episode_values['episodeNumber'] = None
+                try:
+                    episode_values['name'] = node.getElementsByTagName('EpisodeName')[0].firstChild.data
+                except AttributeError:
+                    episode_values['name'] = None
+                try:
+                    episode_values['overview'] = node.getElementsByTagName('Overview')[0].firstChild.data
+                except AttributeError:
+                    episode_values['overview'] = None
+                try:
+                    episode_values['firstAired'] = node.getElementsByTagName('FirstAired')[0].firstChild.data
+                except AttributeError:
+                    episode_values['firstAired'] = None
+                try:
+                    episode_values['guest'] = node.getElementsByTagName('GuestStars')[0].firstChild.data
+                except AttributeError:
+                    episode_values['guest'] = None
+                try:
+                    episode_values['director'] = node.getElementsByTagName('Director')[0].firstChild.data
+                except AttributeError:
+                    episode_values['director'] = None
+                try:
+                    episode_values['writer'] = node.getElementsByTagName('Writer')[0].firstChild.data
+                except AttributeError:
+                    episode_values['writer'] = None
+                try:
+                    episode_values['image'] = node.getElementsByTagName('filename')[0].firstChild.data
+                except AttributeError:
+                    episode_values['image'] = None
+                try:
+                    episode_values['imdbId'] = node.getElementsByTagName('IMDB_ID')[0].firstChild.data
+                except AttributeError:
+                    episode_values['imdbId'] = None
+
+                return episode_values
+        except ExpatError as e:
+            print("ERROR WITH API PAGE: ", e)
+
+
 def series_update():
     try:
         print("Updating series...")
@@ -209,11 +298,34 @@ def series_update():
             print("ERROR WITH API PAGE: ", e)
 
 
+def episode_update():
+    try:
+        print("Updating episodes...")
+        connection = sql.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("""SELECT DISTINCT id FROM episode_new""")
+        rows = cursor.fetchall()
+
+        for row in rows:
+            episode_id = row[0]
+            db_update_episode(get_episode_details(episode_id))
+
+        cursor.close()
+        connection.close()
+    except sql.Error as e:
+        print("ERROR WITH SQL CONNECTION: ", e)
+    except ExpatError as e:
+            print("ERROR WITH API PAGE: ", e)
+
+
 def main_get_new():
     start_time = datetime.now()
     # get_new_ids(db_select_timestamp())
     # print("Done getting new series and episodes...")
-    series_update()
+    # series_update()
+    # print("Done inserting new series...")
+    episode_update()
+    print("Done inserting new episodes...")
     end_time = datetime.now()
     duration = end_time - start_time
     print("Start time: ", str(start_time))
