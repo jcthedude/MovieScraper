@@ -59,7 +59,7 @@ def db_insert_episode(episode_id):
 
 
 def db_update_series(series_values):
-    print("Updating: ", series_values['id'], "-", series_values['name'])
+    print("Updating: ", series_values['id'])
     if series_values['id'] is None or series_values['name'] is None:
         print("Skipping...no series id or name.")
     else:
@@ -72,7 +72,7 @@ def db_update_series(series_values):
             , series_values['status'], series_values['banner'], series_values['fanart'], series_values['poster']
             , series_values['zap2itId'], series_values['imdbId']))
         connection.commit()
-        print("Done updating: ", series_values['id'], "-", series_values['name'])
+        print("Done updating: ", series_values['id'])
         cursor.close()
         connection.close()
 
@@ -194,7 +194,7 @@ def series_update():
         print("Updating series...")
         connection = sql.connect(**db_config)
         cursor = connection.cursor()
-        cursor.execute("""SELECT DISTINCT id FROM series_new WHERE id = '83426'""")
+        cursor.execute("""SELECT DISTINCT id FROM series_new""")
         rows = cursor.fetchall()
 
         for row in rows:
