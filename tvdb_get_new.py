@@ -40,7 +40,7 @@ def db_insert_time(timestamp):
     connection.close()
 
 
-def db_insert_series(series_id):
+def db_insert_new_series(series_id):
     connection = sql.connect(**db_config)
     cursor = connection.cursor()
     cursor.execute("""INSERT INTO series_new SELECT %s""", (series_id, ))
@@ -49,7 +49,7 @@ def db_insert_series(series_id):
     connection.close()
 
 
-def db_insert_episode(episode_id):
+def db_insert_new_episode(episode_id):
     connection = sql.connect(**db_config)
     cursor = connection.cursor()
     cursor.execute("""INSERT INTO episode_new SELECT %s""", (episode_id, ))
@@ -58,8 +58,8 @@ def db_insert_episode(episode_id):
     connection.close()
 
 
-def db_update_series(series_values):
-    print("Updating: ", series_values['id'])
+def db_insert_series_details(series_values):
+    print("Inserting: ", series_values['id'])
     if series_values['id'] is None or series_values['name'] is None:
         print("Skipping...no series id or name.")
     else:
@@ -77,8 +77,8 @@ def db_update_series(series_values):
         connection.close()
 
 
-def db_update_episode(episode_values):
-    print("Updating: ", episode_values['id'])
+def db_insert_episode_details(episode_values):
+    print("Inserting: ", episode_values['id'])
     if episode_values['id'] is None or episode_values['name'] is None or episode_values['seriesId'] is None\
         or episode_values['seasonId'] is None or episode_values['seasonNumber'] is None\
         or episode_values['episodeNumber'] is None:
@@ -106,20 +106,20 @@ def get_new_ids(last_updated):
         try:
             xml = minidom.parseString(r.data)
 
-            print("Starting timestamp update...")
+            print("Starting timestamp fetch...")
             for node in xml.getElementsByTagName('Time'):
                 db_insert_time(node.firstChild.data)
-            print("Finished with timestamp update...")
+            print("Finished with timestamp fetch...")
 
-            print("Starting series update...")
+            print("Starting series fetch...")
             for node in xml.getElementsByTagName('Series'):
-                db_insert_series(node.firstChild.data)
-            print("Finished with series update...")
+                db_insert_new_series(node.firstChild.data)
+            print("Finished with series fetch...")
 
-            print("Starting episode update...")
+            print("Starting episode fetch...")
             for node in xml.getElementsByTagName('Episode'):
-                db_insert_episode(node.firstChild.data)
-            print("Finished with episode update...")
+                db_insert_new_episode(node.firstChild.data)
+            print("Finished with episode fetch...")
 
         except ExpatError as e:
             print("ERROR WITH API PAGE: ", e)
@@ -278,9 +278,9 @@ def get_episode_details(episode_id):
             print("ERROR WITH API PAGE: ", e)
 
 
-def series_update():
+def db_staging_series():
     try:
-        print("Updating series...")
+        print("Staging series...")
         connection = sql.connect(**db_config)
         cursor = connection.cursor()
         cursor.execute("""SELECT DISTINCT id FROM series_new""")
@@ -288,7 +288,7 @@ def series_update():
 
         for row in rows:
             series_id = row[0]
-            db_update_series(get_series_details(series_id))
+            db_insert_series_details(get_series_details(series_id))
 
         cursor.close()
         connection.close()
@@ -298,9 +298,9 @@ def series_update():
             print("ERROR WITH API PAGE: ", e)
 
 
-def episode_update():
+def db_staging_episode():
     try:
-        print("Updating episodes...")
+        print("Staging episodes...")
         connection = sql.connect(**db_config)
         cursor = connection.cursor()
         cursor.execute("""SELECT DISTINCT id FROM episode_new""")
@@ -308,7 +308,7 @@ def episode_update():
 
         for row in rows:
             episode_id = row[0]
-            db_update_episode(get_episode_details(episode_id))
+            db_insert_episode_details(get_episode_details(episode_id))
 
         cursor.close()
         connection.close()
@@ -318,13 +318,45 @@ def episode_update():
             print("ERROR WITH API PAGE: ", e)
 
 
-def main_get_new():
+def db_insert_final_series():
+    try:
+        print("Inserting series...")
+        connection = sql.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("""CALL update_series_tvdb()""")
+        cursor.close()
+        connection.close()
+    except sql.Error as e:
+        print("ERROR WITH SQL CONNECTION: ", e)
+    except ExpatError as e:
+            print("ERROR WITH API PAGE: ", e)
+
+
+def db_insert_final_episode():
+    try:
+        print("Inserting episodes...")
+        connection = sql.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("""CALL update_episode_tvdb()""")
+        cursor.close()
+        connection.close()
+    except sql.Error as e:
+        print("ERROR WITH SQL CONNECTION: ", e)
+    except ExpatError as e:
+            print("ERROR WITH API PAGE: ", e)
+
+
+def main_tvdb_get_new():
     start_time = datetime.now()
     get_new_ids(db_select_timestamp())
     print("Done getting new series and episodes...")
-    series_update()
+    db_staging_series()
+    print("Done staging new series...")
+    db_staging_episode()
+    print("Done staging new episodes...")
+    db_insert_final_series()
     print("Done inserting new series...")
-    episode_update()
+    db_insert_final_episode()
     print("Done inserting new episodes...")
     end_time = datetime.now()
     duration = end_time - start_time
@@ -333,4 +365,4 @@ def main_get_new():
     print("Total duration (minutes): ", str(duration.seconds / 60))
 
 
-main_get_new()
+main_tvdb_get_new()
