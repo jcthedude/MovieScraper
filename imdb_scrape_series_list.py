@@ -22,7 +22,7 @@ def main():
             row_content = row.contents[0]
             title = row_content.contents[0]
             link = row_content.get('href')
-            print(title, link)
+            print(title, link[7:-1])
 
         record_count += 250
 
