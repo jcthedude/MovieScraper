@@ -54,16 +54,16 @@ def imdb_fetch_series_season_list():
 
         if valid_url:
             soup = BeautifulSoup(r.data, 'html.parser')
-            soup_description = soup.findAll("div", {"class": "inline canwrap"})[0]
-            soup_content_rating = soup.findAll("span", {"itemprop": "contentRating"})[0]
-            soup_runtime = soup.findAll("time", {"itemprop": "duration"})[0]
-            soup_creator = soup.findAll("div", {"itemprop": "creator"})[0].findAll('a')
-            soup_actor = soup.findAll("div", {"itemprop": "actors"})[0].findAll('a')
-            soup_rating = soup.findAll("span", {"itemprop": "ratingValue"})[0]
-            soup_rating_count = soup.findAll("span", {"itemprop": "ratingCount"})[0]
-            soup_genre = soup.findAll("div", {"itemprop": "genre"})[0].findAll('a')
-            soup_rundate = soup.findAll("span", {"class": "nobr"})[0]
-            soup_recommended = soup.findAll("div", {"class": "rec_slide"})[0].findAll('a')
+            soup_description = soup.find_all("div", {"class": "inline canwrap"})[0]
+            soup_content_rating = soup.find_all("span", {"itemprop": "contentRating"})[0]
+            soup_runtime = soup.find_all("time", {"itemprop": "duration"})[0]
+            soup_creator = soup.find_all("div", {"itemprop": "creator"})[0].find_all('a')
+            soup_rating = soup.find_all("span", {"itemprop": "ratingValue"})[0]
+            soup_rating_count = soup.find_all("span", {"itemprop": "ratingCount"})[0]
+            soup_genre = soup.find_all("div", {"itemprop": "genre"})[0].find_all('a')
+            soup_rundate = soup.find_all("span", {"class": "nobr"})[0]
+            soup_recommended = soup.find_all("div", {"class": "rec_slide"})[0].find_all('a')
+            soup_cast = soup.find_all("table", {"class": "cast_list"})[0]
 
             if len(soup_description) != 0:
                 description = soup_description.get_text().strip()
@@ -84,21 +84,14 @@ def imdb_fetch_series_season_list():
                 print("No runtime found")
 
             if len(soup_creator) != 0:
+                soup_count = 1
                 for creator in soup_creator:
                     creator_name = creator.get_text().strip()
                     creator_id = creator['href'][6:-15]
-                    print(creator_name, creator_id)
+                    print(soup_count, creator_name, creator_id)
+                    soup_count += 1
             else:
                 print("No creator found")
-
-            if len(soup_actor) != 0:
-                for actor in soup_actor:
-                    actor_name = actor.get_text().strip()
-                    actor_id = actor['href'][6:-15]
-                    if "See full cast" not in actor_name:
-                        print(actor_name, actor_id)
-            else:
-                print("No actor found")
 
             if len(soup_rating) != 0:
                 rating = soup_rating.get_text().strip()
@@ -113,9 +106,11 @@ def imdb_fetch_series_season_list():
                 print("No rating count found")
 
             if len(soup_genre) != 0:
+                soup_count = 1
                 for genre in soup_genre:
                     genre = genre.get_text().strip()
-                    print(genre)
+                    print(soup_count, genre)
+                    soup_count += 1
             else:
                 print("No actor found")
 
@@ -130,12 +125,32 @@ def imdb_fetch_series_season_list():
                 print("No run date found")
 
             if len(soup_recommended) != 0:
+                soup_count = 1
                 for rec in soup_recommended:
-                    recommend_name = rec.get_text().strip()
+                    recommend_name = rec.find_all('img')[0]['alt']
                     recommend_id = rec['href'][7:-17]
-                    print(recommend_name, recommend_id)
+                    print(soup_count, recommend_name, recommend_id)
+                    soup_count += 1
             else:
                 print("No recommendations found")
+
+            if len(soup_cast) != 0:
+                soup_count = 1
+                for cast in soup_cast.find_all("td", {"class": "primary_photo"}):
+                    actor_name = cast.find_all('img')[0]['title']
+                    actor_id = cast.find_all('a')[0]['href'][6:-15]
+                    actor_image = cast.find_all('img')[0]['loadlate']
+                    print(soup_count, actor_name, actor_id, actor_image)
+                    soup_count += 1
+
+                soup_count = 1
+                for cast in soup_cast.find_all("td", {"class": "character"}):
+                    character = cast.find_all('div')[0].get_text().split('(', 1)[0].split('/', 1)[0].strip()
+                    print(soup_count, character)
+                    soup_count += 1
+            else:
+                print("No cast found")
+
         else:
             count += 1
 
