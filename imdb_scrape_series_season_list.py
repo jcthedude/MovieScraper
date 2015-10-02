@@ -11,37 +11,63 @@ db_config = {
 }
 
 
-def db_insert_imdb_series_season_list(cursor, id, seasonNumber):
-    cursor.execute("""INSERT INTO imdb_series_season_list SELECT %s, %s, %s""", (count, id, name))
-    print("Insert complete: ", id, seasonNumber)
+def db_select_imdb_series_list():
+    try:
+        print("Fetching  all series...")
+        connection = sql.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("""SELECT DISTINCT id FROM imdb_series_list ORDER BY row""")
+        rows = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+        return rows
+    except sql.Error as e:
+        print("ERROR WITH SQL CONNECTION: ", e)
+
+
+def db_insert_imdb_series_season_list(cursor, id, seasonNumber, url):
+    cursor.execute("""INSERT INTO imdb_series_season_list SELECT %s, %s, %s""", (id, seasonNumber, url))
 
 
 def imdb_fetch_series_season_list():
-    url = "http://www.imdb.com/title/tt1954347/"
-    http = urllib3.PoolManager()
-    r = http.request('GET', url)
-    print(r.status)
-    print(url)
+    rows = db_select_imdb_series_list()
+    count = 1
 
-    soup = BeautifulSoup(r.data, 'html.parser')
-    rows = soup.find_all("div", class_="seasons-and-year-nav")
+    connection = sql.connect(**db_config)
+    cursor = connection.cursor()
+
     for row in rows:
-        links = row.findAll('a')
-        for link in links:
-            if "season" in str(link):
-                print(link.string)
+        series_id = row[0]
+        url = "http://www.imdb.com/title/" + series_id
+        http = urllib3.PoolManager()
+        r = http.request('GET', url)
+        print(count, url)
 
-    # if not rows:
-    #     print("No rows returned.")
-    #     break
-    # for row in rows:
-    #     row_content = row.contents[0]
-    #     # season_number = row_content.get('href')
-    #     print(row['href'])
-    #     id = "tt1954347"
-    #     # db_insert_imdb_series_season_list(cursor, str(id), str(season_number))
-    #
-    # break
+        soup = BeautifulSoup(r.data, 'html.parser')
+        rows = soup.find_all("div", class_="seasons-and-year-nav")
+
+        if len(rows) != 0:
+            for row in rows:
+                links = row.findAll('a')
+                for link in links:
+                    if "season" in str(link):
+                        season_number = str(link.string)
+                        url = str(link['href'])
+                        print(season_number, url)
+                        if season_number.isdigit():
+                            db_insert_imdb_series_season_list(cursor, str(series_id), season_number, url)
+
+            connection.commit()
+            print("Insert complete: ", series_id)
+            count += 1
+        else:
+            print("No seasons found for: ", series_id)
+            count += 1
+
+    cursor.close()
+    connection.close()
+    print("Process complete. ", count, "rows inserted.")
 
 
 imdb_fetch_series_season_list()
