@@ -54,6 +54,7 @@ def imdb_fetch_series_season_list():
 
         if valid_url:
             soup = BeautifulSoup(r.data, 'html.parser')
+            soup_image = soup.find_all("div", {"class": "image"})[0].find_all('a')[0].find_all('img')[0]['src']
             soup_description = soup.find_all("div", {"class": "inline canwrap"})[0]
             soup_content_rating = soup.find_all("span", {"itemprop": "contentRating"})[0]
             soup_runtime = soup.find_all("time", {"itemprop": "duration"})[0]
@@ -64,6 +65,12 @@ def imdb_fetch_series_season_list():
             soup_rundate = soup.find_all("span", {"class": "nobr"})[0]
             soup_recommended = soup.find_all("div", {"class": "rec_slide"})[0].find_all('a')
             soup_cast = soup.find_all("table", {"class": "cast_list"})[0]
+
+            if len(soup_image) != 0:
+                image = soup_image
+                print(image)
+            else:
+                print("No image found")
 
             if len(soup_description) != 0:
                 description = soup_description.get_text().strip()
@@ -129,7 +136,8 @@ def imdb_fetch_series_season_list():
                 for rec in soup_recommended:
                     recommend_name = rec.find_all('img')[0]['alt']
                     recommend_id = rec['href'][7:-17]
-                    print(soup_count, recommend_name, recommend_id)
+                    recommend_image = rec.find_all('img')[0]['src']
+                    print(soup_count, recommend_name, recommend_id, recommend_image)
                     soup_count += 1
             else:
                 print("No recommendations found")
