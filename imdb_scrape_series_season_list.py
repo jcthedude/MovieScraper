@@ -16,7 +16,7 @@ def db_select_imdb_series_list():
         print("Fetching  all series...")
         connection = sql.connect(**db_config)
         cursor = connection.cursor()
-        cursor.execute("""SELECT DISTINCT id FROM imdb_series_list WHERE row >= 4476 ORDER BY row""")
+        cursor.execute("""SELECT DISTINCT id FROM imdb_series_list ORDER BY row""")
         rows = cursor.fetchall()
         cursor.close()
         connection.close()
