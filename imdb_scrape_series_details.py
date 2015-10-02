@@ -61,6 +61,9 @@ def imdb_fetch_series_season_list():
             soup_actor = soup.findAll("div", {"itemprop": "actors"})[0].findAll('a')
             soup_rating = soup.findAll("span", {"itemprop": "ratingValue"})[0]
             soup_rating_count = soup.findAll("span", {"itemprop": "ratingCount"})[0]
+            soup_genre = soup.findAll("div", {"itemprop": "genre"})[0].findAll('a')
+            soup_rundate = soup.findAll("span", {"class": "nobr"})[0]
+            soup_recommended = soup.findAll("div", {"class": "rec_slide"})[0].findAll('a')
 
             if len(soup_description) != 0:
                 description = soup_description.get_text().strip()
@@ -108,6 +111,31 @@ def imdb_fetch_series_season_list():
                 print(rating_count)
             else:
                 print("No rating count found")
+
+            if len(soup_genre) != 0:
+                for genre in soup_genre:
+                    genre = genre.get_text().strip()
+                    print(genre)
+            else:
+                print("No actor found")
+
+            if len(soup_rundate) != 0:
+                rundate = soup_rundate.get_text().strip()
+                if " " in rundate:
+                    status = "Continuing"
+                else:
+                    status = "Ended"
+                print(rundate, status)
+            else:
+                print("No run date found")
+
+            if len(soup_recommended) != 0:
+                for rec in soup_recommended:
+                    recommend_name = rec.get_text().strip()
+                    recommend_id = rec['href'][7:-17]
+                    print(recommend_name, recommend_id)
+            else:
+                print("No recommendations found")
         else:
             count += 1
 
