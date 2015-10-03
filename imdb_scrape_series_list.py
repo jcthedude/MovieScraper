@@ -1,34 +1,25 @@
 import urllib3
 from bs4 import BeautifulSoup
-import mysql.connector as sql
+from pymongo import MongoClient
+from datetime import datetime
 
-db_config = {
-  'user': 'slampana',
-  'password': 'Campana1',
-  'host': '107.170.244.175',
-  'database': 'tvdb',
-  'raise_on_warnings': True,
-}
-
-
-def db_insert_imdb_series_list(cursor, count, id, name):
-    cursor.execute("""INSERT INTO imdb_series_list SELECT %s, %s, %s""", (count, id, name))
-    print("Insert complete: ", id, name)
+client = MongoClient("mongodb://admin:Campana1@107.170.248.43:27017")
+db = client.tv
+collection = db.show_list
 
 
 def imdb_fetch_series_list():
+    start_time = datetime.now()
     record_count = 1
     status = 200
-    count = 1
-
-    connection = sql.connect(**db_config)
-    cursor = connection.cursor()
+    order = 1
 
     while status == 200:
         url = "http://www.imdb.com/search/title?languages=en|1&count=250&title_type=tv_series&sort=moviemeter,asc" \
               "&view=simple&start=" + str(record_count)
         http = urllib3.PoolManager()
         r = http.request('GET', url)
+        show_list = []
         print(url)
         status = r.status
 
@@ -39,21 +30,31 @@ def imdb_fetch_series_list():
             print("No rows returned.")
             break
         for row in rows:
-            print(count)
+            print(order)
             row_content = row.contents[0]
             name = row_content.contents[0]
             link = row_content.get('href')
             id = link[7:-1]
-            db_insert_imdb_series_list(cursor, count, str(id), str(name))
-            count += 1
 
-        connection.commit()
+            show = {"id": id,
+                "name": name,
+                "order": order,
+                "timestamp": datetime.utcnow()}
+            print("Adding to list: ", order, id, name)
+            show_list.append(show)
+
+            order += 1
+
+        collection.insert_many(show_list)
+        print("Bulk insert complete.")
         record_count += 250
 
-    connection.commit()
-    cursor.close()
-    connection.close()
-    print("Status: ", r.status)
+    print("Completed.  Fetched", order, "shows.")
+    end_time = datetime.now()
+    duration = end_time - start_time
+    print("Start time: ", str(start_time))
+    print("End time: ", str(end_time))
+    print("Total duration (minutes): ", str(duration.seconds / 60))
 
 
 imdb_fetch_series_list()

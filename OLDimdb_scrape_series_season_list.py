@@ -39,46 +39,35 @@ def imdb_fetch_series_season_list():
 
     for row in rows:
         series_id = row[0]
-        valid_url = True
         url = "http://www.imdb.com/title/" + series_id
         http = urllib3.PoolManager()
-
-        try:
-            r = http.request('GET', url)
-        except:
-            valid_url = False
-            print("Problem with URL data returned.")
-            pass
-
+        r = http.request('GET', url)
         print(count, url)
 
-        if valid_url:
-            soup = BeautifulSoup(r.data, 'html.parser')
-            rows = soup.find_all("div", class_="seasons-and-year-nav")
+        soup = BeautifulSoup(r.data, 'html.parser')
+        rows = soup.find_all("div", class_="seasons-and-year-nav")
 
-            if len(rows) != 0:
-                for row in rows:
-                    links = row.findAll('a')
-                    for link in links:
-                        if "season" in str(link):
-                            season_number = str(link.string)
-                            url = str(link['href'])
-                            print(season_number, url)
-                            if season_number.isdigit():
-                                db_insert_imdb_series_season_list(cursor, str(series_id), season_number, url)
+        if len(rows) != 0:
+            for row in rows:
+                links = row.findAll('a')
+                for link in links:
+                    if "season" in str(link):
+                        season_number = str(link.string)
+                        url = str(link['href'])
+                        print(season_number, url)
+                        if season_number.isdigit():
+                            db_insert_imdb_series_season_list(cursor, str(series_id), season_number, url)
 
-                connection.commit()
-                print("Insert complete: ", series_id)
-                count += 1
-            else:
-                print("No seasons found for: ", series_id)
-                count += 1
+            connection.commit()
+            print("Insert complete: ", series_id)
+            count += 1
         else:
+            print("No seasons found for: ", series_id)
             count += 1
 
     cursor.close()
     connection.close()
-    print("Process complete. ", count-1, "series processed.")
+    print("Process complete. ", count, "rows inserted.")
 
 
 imdb_fetch_series_season_list()

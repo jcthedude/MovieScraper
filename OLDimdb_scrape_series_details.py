@@ -1,18 +1,29 @@
 import urllib3
 from bs4 import BeautifulSoup
-from pymongo import MongoClient
-from datetime import datetime
+import mysql.connector as sql
 
-client = MongoClient("mongodb://admin:Campana1@107.170.248.43:27017")
-db = client.tv
-collection = db.show
+db_config = {
+  'user': 'slampana',
+  'password': 'Campana1',
+  'host': '107.170.244.175',
+  'database': 'tvdb',
+  'raise_on_warnings': True,
+}
 
 
 def db_select_imdb_series_list():
-    print("Fetching  all series...")
-    id_list = collection.find({id: 1})
+    try:
+        print("Fetching  all series...")
+        connection = sql.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("""SELECT DISTINCT id FROM imdb_series_list WHERE id = 'tt3597854' ORDER BY row""")
+        rows = cursor.fetchall()
+        cursor.close()
+        connection.close()
 
-    return id_list
+        return rows
+    except sql.Error as e:
+        print("ERROR WITH SQL CONNECTION: ", e)
 
 
 # def db_insert_imdb_series_season_list(cursor, id, seasonNumber, url):
@@ -20,12 +31,14 @@ def db_select_imdb_series_list():
 
 
 def imdb_fetch_series_season_list():
-    start_time = datetime.now()
-    ids = db_select_imdb_series_list()
+    rows = db_select_imdb_series_list()
     count = 1
 
-    for id in ids:
-        series_id = id[0]
+    connection = sql.connect(**db_config)
+    cursor = connection.cursor()
+
+    for row in rows:
+        series_id = row[0]
         valid_url = True
         url = "http://www.imdb.com/title/" + series_id
         http = urllib3.PoolManager()
@@ -149,12 +162,9 @@ def imdb_fetch_series_season_list():
         else:
             count += 1
 
+    cursor.close()
+    connection.close()
     print("Process complete. ", count-1, "series processed.")
-    end_time = datetime.now()
-    duration = end_time - start_time
-    print("Start time: ", str(start_time))
-    print("End time: ", str(end_time))
-    print("Total duration (minutes): ", str(duration.seconds / 60))
 
 
 imdb_fetch_series_season_list()
