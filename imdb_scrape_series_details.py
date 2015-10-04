@@ -5,12 +5,13 @@ from datetime import datetime
 
 client = MongoClient("mongodb://admin:Campana1@107.170.248.43:27017")
 db = client.tv
-collection = db.show
+collection_show_list = db.show_list
+collection_show = db.show
 
 
 def db_select_imdb_series_list():
     print("Fetching  all series...")
-    id_list = collection.find({id: 1})
+    id_list = collection_show_list.find({}, {'id': 1, 'name': 1, 'order': 1, '_id': 0})
 
     return id_list
 
@@ -25,9 +26,13 @@ def imdb_fetch_series_season_list():
     count = 1
 
     for id in ids:
-        series_id = id[0]
+        show_id = id['id']
+        name = id['name']
+        order = id['order']
+        timestamp = datetime.utcnow()
+
         valid_url = True
-        url = "http://www.imdb.com/title/" + series_id
+        url = "http://www.imdb.com/title/" + show_id
         http = urllib3.PoolManager()
 
         try:
@@ -40,9 +45,12 @@ def imdb_fetch_series_season_list():
         print(count, url)
 
         if valid_url:
+            show = {}
+            show.update({"id": show_id, "name": name, "order": order, "timestamp": timestamp})
+
             soup = BeautifulSoup(r.data, 'html.parser')
             soup_image = soup.find_all("div", {"class": "image"})[0].find_all('a')[0].find_all('img')[0]['src']
-            soup_description = soup.find_all("div", {"class": "inline canwrap"})[0]
+            soup_description = soup.find_all("p", {"itemprop": "description"})[0]
             soup_content_rating = soup.find_all("span", {"itemprop": "contentRating"})[0]
             soup_runtime = soup.find_all("time", {"itemprop": "duration"})[0]
             soup_creator = soup.find_all("div", {"itemprop": "creator"})[0].find_all('a')
@@ -55,25 +63,25 @@ def imdb_fetch_series_season_list():
 
             if len(soup_image) != 0:
                 image = soup_image
-                print(image)
+                show.update({'image': image})
             else:
                 print("No image found")
 
             if len(soup_description) != 0:
                 description = soup_description.get_text().strip()
-                print(description)
+                show.update({'description': description})
             else:
                 print("No description found")
 
             if len(soup_content_rating) != 0:
                 content_rating = soup_content_rating.get_text().strip()
-                print(content_rating)
+                show.update({'content_rating': content_rating})
             else:
                 print("No content rating found")
 
             if len(soup_runtime) != 0:
                 runtime = soup_runtime.get_text().strip()
-                print(runtime)
+                show.update({'runtime': runtime})
             else:
                 print("No runtime found")
 
@@ -89,13 +97,13 @@ def imdb_fetch_series_season_list():
 
             if len(soup_rating) != 0:
                 rating = soup_rating.get_text().strip()
-                print(rating)
+                show.update({'rating': rating})
             else:
                 print("No rating found")
 
             if len(soup_rating_count) != 0:
                 rating_count = soup_rating_count.get_text().strip()
-                print(rating_count)
+                show.update({'rating_count': rating_count})
             else:
                 print("No rating count found")
 
@@ -110,11 +118,12 @@ def imdb_fetch_series_season_list():
 
             if len(soup_rundate) != 0:
                 rundate = soup_rundate.get_text().strip()
+                show.update({'rundate': rundate})
                 if " " in rundate:
                     status = "Continuing"
                 else:
                     status = "Ended"
-                print(rundate, status)
+                show.update({'rundate': rundate, 'status': status})
             else:
                 print("No run date found")
 
@@ -123,7 +132,10 @@ def imdb_fetch_series_season_list():
                 for rec in soup_recommended:
                     recommend_name = rec.find_all('img')[0]['alt']
                     recommend_id = rec['href'][7:-17]
-                    recommend_image = rec.find_all('img')[0]['src']
+                    try:
+                        recommend_image = rec.find_all('img')[0]['loadlate']
+                    except:
+                        recommend_image = rec.find_all('img')[0]['src']
                     print(soup_count, recommend_name, recommend_id, recommend_image)
                     soup_count += 1
             else:
@@ -131,20 +143,38 @@ def imdb_fetch_series_season_list():
 
             if len(soup_cast) != 0:
                 soup_count = 1
+                actor = []
                 for cast in soup_cast.find_all("td", {"class": "primary_photo"}):
                     actor_name = cast.find_all('img')[0]['title']
                     actor_id = cast.find_all('a')[0]['href'][6:-15]
-                    actor_image = cast.find_all('img')[0]['loadlate']
+                    try:
+                        actor_image = cast.find_all('img')[0]['loadlate']
+                    except:
+                        actor_image = cast.find_all('img')[0]['src']
                     print(soup_count, actor_name, actor_id, actor_image)
+                    actor.append(actor_name)
                     soup_count += 1
 
                 soup_count = 1
+                character = []
                 for cast in soup_cast.find_all("td", {"class": "character"}):
-                    character = cast.find_all('div')[0].get_text().split('(', 1)[0].split('/', 1)[0].strip()
-                    print(soup_count, character)
+                    character_name = cast.find_all('div')[0].get_text().split('(', 1)[0].split('/', 1)[0].strip()
+                    print(soup_count, character_name)
+                    character.append(character_name)
                     soup_count += 1
+
+                i = 0
+                actor_details_list = []
+                while i < soup_count - 1:
+                    actor_details = ({"name": actor[i], "character": character[i]})
+                    actor_details_list.append(actor_details)
+                    i += 1
+
+                print(actor_details_list)
             else:
                 print("No cast found")
+
+            print(show)
 
         else:
             count += 1
