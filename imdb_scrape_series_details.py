@@ -151,8 +151,8 @@ def imdb_fetch_series_season_list():
                         actor_image = cast.find_all('img')[0]['loadlate']
                     except:
                         actor_image = cast.find_all('img')[0]['src']
-                    print(soup_count, actor_name, actor_id, actor_image)
-                    actor.append(actor_name)
+                    actor_dict = ({"id": actor_id, "name": actor_name, "order": soup_count, "image": actor_image})
+                    actor.append(actor_dict)
                     soup_count += 1
 
                 soup_count = 1
@@ -166,7 +166,7 @@ def imdb_fetch_series_season_list():
                 i = 0
                 actor_details_list = []
                 while i < soup_count - 1:
-                    actor_details = ({"name": actor[i], "character": character[i]})
+                    actor_details = ({"id": actor[i]["id"], "name": actor[i]["name"], "order": actor[i]["order"], "image": actor[i]["image"], "character": character[i]})
                     actor_details_list.append(actor_details)
                     i += 1
 
