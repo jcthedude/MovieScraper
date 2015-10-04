@@ -11,7 +11,7 @@ collection_show = db.show
 
 def db_select_imdb_series_list():
     print("Fetching  all series...")
-    id_list = collection_show_list.find({}, {'id': 1, 'name': 1, 'order': 1, '_id': 0})
+    id_list = collection_show_list.find({}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
 
@@ -87,11 +87,14 @@ def imdb_fetch_series_season_list():
 
             if len(soup_creator) != 0:
                 soup_count = 1
+                creator_list = []
                 for creator in soup_creator:
                     creator_name = creator.get_text().strip()
                     creator_id = creator['href'][6:-15]
-                    print(soup_count, creator_name, creator_id)
+                    creator_dict = ({"id": creator_id, "name": creator_name, "order": soup_count})
+                    creator_list.append(creator_dict)
                     soup_count += 1
+                show.update({"creator": creator_list})
             else:
                 print("No creator found")
 
@@ -109,10 +112,12 @@ def imdb_fetch_series_season_list():
 
             if len(soup_genre) != 0:
                 soup_count = 1
+                genre_list = []
                 for genre in soup_genre:
                     genre = genre.get_text().strip()
-                    print(soup_count, genre)
+                    genre_list.append({"name": genre, "order": soup_count})
                     soup_count += 1
+                show.update({"genre": genre_list})
             else:
                 print("No actor found")
 
@@ -129,6 +134,7 @@ def imdb_fetch_series_season_list():
 
             if len(soup_recommended) != 0:
                 soup_count = 1
+                recommendation_list = []
                 for rec in soup_recommended:
                     recommend_name = rec.find_all('img')[0]['alt']
                     recommend_id = rec['href'][7:-17]
@@ -136,8 +142,11 @@ def imdb_fetch_series_season_list():
                         recommend_image = rec.find_all('img')[0]['loadlate']
                     except:
                         recommend_image = rec.find_all('img')[0]['src']
-                    print(soup_count, recommend_name, recommend_id, recommend_image)
+                    recommendation_dict = ({"id": recommend_id, "name": recommend_name, "order": soup_count
+                                            , "image": recommend_image})
+                    recommendation_list.append(recommendation_dict)
                     soup_count += 1
+                show.update({"recommendation": recommendation_list})
             else:
                 print("No recommendations found")
 
@@ -159,22 +168,23 @@ def imdb_fetch_series_season_list():
                 character = []
                 for cast in soup_cast.find_all("td", {"class": "character"}):
                     character_name = cast.find_all('div')[0].get_text().split('(', 1)[0].split('/', 1)[0].strip()
-                    print(soup_count, character_name)
                     character.append(character_name)
                     soup_count += 1
 
                 i = 0
                 actor_details_list = []
                 while i < soup_count - 1:
-                    actor_details = ({"id": actor[i]["id"], "name": actor[i]["name"], "order": actor[i]["order"], "image": actor[i]["image"], "character": character[i]})
+                    actor_details = ({"id": actor[i]["id"], "name": actor[i]["name"], "order": actor[i]["order"]
+                                     , "image": actor[i]["image"], "character": character[i]})
                     actor_details_list.append(actor_details)
                     i += 1
-
+                show.update({"cast": actor_details_list})
                 print(actor_details_list)
             else:
                 print("No cast found")
 
             print(show)
+            collection_show.insert(show)
 
         else:
             count += 1
