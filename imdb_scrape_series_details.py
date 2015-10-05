@@ -16,7 +16,7 @@ def db_select_imdb_series_list():
     return id_list
 
 
-def imdb_fetch_series_season_list():
+def imdb_fetch_series_details():
     start_time = datetime.now()
     ids = db_select_imdb_series_list()
     count = 1
@@ -243,6 +243,6 @@ def imdb_fetch_series_season_list():
     print("Total duration (minutes): ", str(duration.seconds / 60))
 
 
-imdb_fetch_series_season_list()
+imdb_fetch_series_details()
 
 
