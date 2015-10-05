@@ -11,7 +11,7 @@ collection_show = db.show
 
 def db_select_imdb_series_list():
     print("Fetching  all series...")
-    id_list = collection_show_list.find({"order": {"$gt": 198}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
+    id_list = collection_show_list.find({"order": {"$gt": 8}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
 
