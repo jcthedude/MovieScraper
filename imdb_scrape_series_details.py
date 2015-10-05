@@ -11,7 +11,7 @@ collection_show = db.show
 
 def db_select_imdb_series_list():
     print("Fetching  all series...")
-    id_list = collection_show_list.find({"order": {"$gt": 8}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
+    id_list = collection_show_list.find({"order": {"$gt": 5328}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
 
@@ -201,9 +201,12 @@ def imdb_fetch_series_season_list():
                     actor_name = cast.find_all('img')[0]['title']
                     actor_id = cast.find_all('a')[0]['href'][6:-15]
                     try:
-                        actor_image = cast.find_all('img')[0]['loadlate']
+                        try:
+                            actor_image = cast.find_all('img')[0]['loadlate']
+                        except:
+                            actor_image = cast.find_all('img')[0]['src']
                     except:
-                        actor_image = cast.find_all('img')[0]['src']
+                        actor_image = "http://ia.media-imdb.com/images/G/01/imdb/images/nopicture/32x44/name-2138558783._CB379389446_.png"
                     actor_dict = ({"id": actor_id, "name": actor_name, "order": soup_count, "image": actor_image})
                     actor.append(actor_dict)
                     soup_count += 1
