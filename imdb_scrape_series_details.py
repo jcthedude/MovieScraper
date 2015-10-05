@@ -187,8 +187,8 @@ def imdb_fetch_series_season_list():
                                                 , "image": recommend_image})
                         recommendation_list.append(recommendation_dict)
                         soup_count += 1
-                    except IndexError as e:
-                        print("IndexError: ", e)
+                    except IndexError:
+                        print("Skipping recommendation...no image available.")
                         pass
                 show.update({"recommendation": recommendation_list})
             else:
