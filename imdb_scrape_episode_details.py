@@ -65,7 +65,7 @@ def imdb_fetch_episode_details():
 
                 # setup soups
                 try:
-                    soup_episode = soup.find_all("div", {"itemprop": "episodes"})
+                    soup_episode = soup.find_all("div", {"class": lambda l: l and l.startswith('list_item')})
                 except IndexError:
                     soup_episode = None
                     pass
@@ -73,8 +73,14 @@ def imdb_fetch_episode_details():
                 # parse soups and input data into show dict
                 if soup_episode is not None:
                     for episode in soup_episode:
-                        episode_id = episode.find_all('meta')[0]['content'].strip()
-                        print(episode_id)
+                        id = episode.find_all('meta')[0]['content'].strip()
+                        name = episode.find_all("div", {"itemprop": "episodes"})[0].find_all('a')[0].get_text().strip()
+                        description = episode.find_all("div", {"itemprop": "description"})[0].get_text().strip()
+                        if "Add a Plot" in description:
+                            description = "Not yet available."
+                        air_date = episode.find_all("div", {"class": "airdate"})[0].get_text().strip()
+                        image = episode.find_all('img')[0]['src'].strip()
+                        print(id, name, description, air_date, image)
                     #collection_show.update_one({"id": show_id, "season.id": season}, {"$set": {"season": season_list, "timestamp": timestamp}})
                 else:
                     print("No season found")
