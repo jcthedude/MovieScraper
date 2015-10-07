@@ -13,7 +13,7 @@ collection_show = db.show
 def db_select_imdb_show_list():
     # fetch the list of all shows to get details for
     print("Fetching  all series...")
-    id_list = collection_show_list.find({"order": {"$gt": 0}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
+    id_list = collection_show_list.find({"order": {"$lt": 2}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
 
@@ -259,6 +259,7 @@ def imdb_fetch_show_details():
                 print("No cast found")
 
             # insert show dict into show db collection
+            collection_show.delete_one({"id": show_id})
             collection_show.insert(show)
             count += 1
 
