@@ -3,82 +3,88 @@ from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from datetime import datetime
 
+# setup mongodb collections
 client = MongoClient("mongodb://admin:Campana1@107.170.248.43:27017")
 db = client.tv
-collection_show_list = db.show_list
 collection_show = db.show
 
 
-def db_select_imdb_series_list():
+def db_select_imdb_show_list():
+    # fetch the list of all shows to get details for
     print("Fetching  all series...")
-    id_list = collection_show_list.find({"id": "tt0773262"}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
+    id_list = collection_show.find({"order": {"$lt": 2}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
+
+    return id_list
+
+
+def db_select_imdb_season_list(show_id):
+    # fetch the list of all shows to get details for
+    print("Fetching  all seasons...")
+    id_list = collection_show.find({"id": show_id}, {'season.id': 1, '_id': 0}).sort([("season.id", 1)])
 
     return id_list
 
 
 def imdb_fetch_episode_details():
+    # declare variables
     start_time = datetime.now()
-    ids = db_select_imdb_series_list()
     count = 1
 
+    # get show list
+    ids = db_select_imdb_show_list()
+
+    # process each show returned from the show list
     for id in ids:
+        # declare variables
         show_id = id['id']
-        name = id['name']
         order = id['order']
         timestamp = datetime.utcnow()
+        seasons = db_select_imdb_season_list(show_id)
 
-        valid_url = True
-        url = "http://www.imdb.com/title/" + show_id + "/epcast?"
-        http = urllib3.PoolManager()
+        for season in seasons:
+            season_id = season.get("season")[0]['id']
+            valid_url = True
+            url = "http://www.imdb.com/title/" + show_id + "/episodes?season=" + season_id
+            http = urllib3.PoolManager()
 
-        try:
-            r = http.request('GET', url)
-        except:
-            valid_url = False
-            print("Problem with URL data returned.")
-            pass
-
-        print(order, url)
-
-        if valid_url:
-            show = {}
-            show.update({"id": show_id, "timestamp": timestamp})
-
-            soup = BeautifulSoup(r.data, 'html.parser')
+            # make sure http request is valid
             try:
-                soup_season = soup.find_all('h3')
-            except IndexError:
-                soup_season = None
-                pass
-            try:
-                soup_episode = soup.find_all('h4')
-            except IndexError:
-                soup_season = None
+                r = http.request('GET', url)
+            except:
+                valid_url = False
+                print("Problem with URL data returned.")
                 pass
 
-            if soup_season is not None:
-                for season in soup_season:
-                    season_name = season.get_text().strip()
-                    if "Season" in season_name:
-                        print(season_name)
+            # print details for console tracking
+            print(order, url)
+
+            # proceed with the process is there's a valid http response
+            if valid_url:
+                # soup the data returned from the http request
+                soup = BeautifulSoup(r.data, 'html.parser')
+
+                # setup soups
+                try:
+                    soup_episode = soup.find_all("div", {"itemprop": "episodes"})
+                except IndexError:
+                    soup_episode = None
+                    pass
+
+                # parse soups and input data into show dict
+                if soup_episode is not None:
+                    for episode in soup_episode:
+                        episode_id = episode.find_all('meta')[0]['content'].strip()
+                        print(episode_id)
+                    #collection_show.update_one({"id": show_id, "season.id": season}, {"$set": {"season": season_list, "timestamp": timestamp}})
+                else:
+                    print("No season found")
+
+                count += 1
+
             else:
-                print("No season found")
+                count += 1
 
-            if soup_episode is not None:
-                for episode in soup_episode:
-                    episode_full_id = episode.get_text().strip()
-                    episode_id = ''.join(filter(lambda x: x.isdigit(), episode_full_id))
-                    episode_name = episode.find_all('a')[0].get_text().strip()
-                    print(episode_full_id, episode_name)
-            else:
-                print("No episode found")
-
-            # collection_show.insert(show)
-            count += 1
-
-        else:
-            count += 1
-
+    # print process results
     print("Process complete. ", count-1, "series processed.")
     end_time = datetime.now()
     duration = end_time - start_time
