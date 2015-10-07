@@ -39,7 +39,7 @@ def imdb_fetch_series_list():
             show = {"id": id,
                 "name": name,
                 "order": order,
-                "timestamp": datetime.utcnow()}
+                "timestamp": datetime.now()}
             print("Adding to list: ", order, id, name)
             show_list.append(show)
 

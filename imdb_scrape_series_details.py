@@ -32,7 +32,7 @@ def imdb_fetch_show_details():
         show_id = id['id']
         name = id['name']
         order = id['order']
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now()
         valid_url = True
         url = "http://www.imdb.com/title/" + show_id
         http = urllib3.PoolManager()

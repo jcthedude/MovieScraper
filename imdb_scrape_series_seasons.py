@@ -24,7 +24,7 @@ def imdb_fetch_series_seasons():
     for id in ids:
         show_id = id['id']
         order = id['order']
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now()
 
         valid_url = True
         url = "http://www.imdb.com/title/" + show_id

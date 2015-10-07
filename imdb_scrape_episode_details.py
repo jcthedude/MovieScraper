@@ -38,7 +38,8 @@ def imdb_fetch_episode_details():
         # declare variables
         show_id = id['id']
         order = id['order']
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now()
+        print(timestamp)
         seasons = db_select_imdb_season_list(show_id)
 
         for season in seasons:
@@ -72,16 +73,24 @@ def imdb_fetch_episode_details():
 
                 # parse soups and input data into show dict
                 if soup_episode is not None:
+                    episode_list = []
                     for episode in soup_episode:
                         id = episode.find_all('meta')[0]['content'].strip()
                         name = episode.find_all("div", {"itemprop": "episodes"})[0].find_all('a')[0].get_text().strip()
                         description = episode.find_all("div", {"itemprop": "description"})[0].get_text().strip()
                         if "Add a Plot" in description:
                             description = "Not yet available."
-                        air_date = episode.find_all("div", {"class": "airdate"})[0].get_text().strip()
+                        try:
+                            air_date = episode.find_all("div", {"class": "airdate"})[0].get_text().strip()
+                        except IndexError:
+                            print("No air date found.")
+                            air_date = "Not yet available."
+                            pass
                         image = episode.find_all('img')[0]['src'].strip()
-                        print(id, name, description, air_date, image)
-                    #collection_show.update_one({"id": show_id, "season.id": season}, {"$set": {"season": season_list, "timestamp": timestamp}})
+                        episode_dict = ({"id": id, "name": name, "description": description, "air_date": air_date, "image": image})
+                        episode_list.append(episode_dict)
+                    print(episode_list)
+                    collection_show.update_one({"id": show_id, "season.id": season}, {"$set": {"season.$.episode": episode_list, "season.$.timestamp": timestamp}})
                 else:
                     print("No season found")
 
