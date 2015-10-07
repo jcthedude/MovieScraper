@@ -22,15 +22,16 @@ def imdb_fetch_series_details():
     count = 1
 
     for id in ids:
+        # declare variables
         show_id = id['id']
         name = id['name']
         order = id['order']
         timestamp = datetime.utcnow()
-
         valid_url = True
         url = "http://www.imdb.com/title/" + show_id
         http = urllib3.PoolManager()
 
+        # make sure http request is valid
         try:
             r = http.request('GET', url)
         except:
@@ -38,13 +39,18 @@ def imdb_fetch_series_details():
             print("Problem with URL data returned.")
             pass
 
+        # print details for console tracking
         print(order, url)
 
+        # proceed with the process is there's a valid http response
         if valid_url:
             show = {}
             show.update({"id": show_id, "name": name, "order": order, "timestamp": timestamp})
 
+            # soup the data returned from the http request
             soup = BeautifulSoup(r.data, 'html.parser')
+
+            # setup soups
             try:
                 soup_image = soup.find_all("div", {"class": "image"})[0].find_all('a')[0].find_all('img')[0]['src']
             except IndexError:
@@ -96,11 +102,17 @@ def imdb_fetch_series_details():
                 soup_recommended = None
                 pass
             try:
+                soup_season = soup.find_all("div", {"class": "seasons-and-year-nav"})[0].find_all('a')
+            except IndexError:
+                soup_season = None
+                pass
+            try:
                 soup_cast = soup.find_all("table", {"class": "cast_list"})[0]
             except IndexError:
                 soup_cast = None
                 pass
 
+            # parse soups and input data into show dict
             if soup_image is not None:
                 image = soup_image
                 show.update({'image': image})
@@ -194,6 +206,17 @@ def imdb_fetch_series_details():
             else:
                 print("No recommendations found")
 
+            if soup_season is not None:
+                season_list = []
+                for season in soup_season:
+                    season_id = season.get_text().strip()
+                    if season_id.isdigit() and int(season_id) < 100:
+                        season_dict = ({"id": season_id})
+                        season_list.append(season_dict)
+                show.update({"season": season_list})
+            else:
+                print("No season found")
+
             if soup_cast is not None:
                 soup_count = 1
                 actor = []
@@ -229,12 +252,14 @@ def imdb_fetch_series_details():
             else:
                 print("No cast found")
 
+            # insert show dict into show db collection
             collection_show.insert(show)
             count += 1
 
         else:
             count += 1
 
+    # print process results
     print("Process complete. ", count-1, "series processed.")
     end_time = datetime.now()
     duration = end_time - start_time
