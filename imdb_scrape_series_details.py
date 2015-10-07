@@ -3,24 +3,30 @@ from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from datetime import datetime
 
+# setup mongodb collections
 client = MongoClient("mongodb://admin:Campana1@107.170.248.43:27017")
 db = client.tv
 collection_show_list = db.show_list
 collection_show = db.show
 
 
-def db_select_imdb_series_list():
+def db_select_imdb_show_list():
+    # fetch the list of all shows to get details for
     print("Fetching  all series...")
     id_list = collection_show_list.find({"order": {"$gt": 0}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
 
 
-def imdb_fetch_series_details():
+def imdb_fetch_show_details():
+    # declare variables
     start_time = datetime.now()
-    ids = db_select_imdb_series_list()
     count = 1
 
+    # get show list
+    ids = db_select_imdb_show_list()
+
+    # process each show returned from the show list
     for id in ids:
         # declare variables
         show_id = id['id']
@@ -268,6 +274,6 @@ def imdb_fetch_series_details():
     print("Total duration (minutes): ", str(duration.seconds / 60))
 
 
-imdb_fetch_series_details()
+imdb_fetch_show_details()
 
 
