@@ -12,7 +12,7 @@ collection_show = db.show
 def db_select_imdb_show_list():
     # fetch the list of all shows to get details for
     print("Fetching  all series...")
-    id_list = collection_show.find({"order": {"$lt": 2}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
+    id_list = collection_show.find({"order": {"$gt": 5}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
 
@@ -39,65 +39,65 @@ def imdb_fetch_episode_details():
         show_id = id['id']
         order = id['order']
         timestamp = datetime.now()
-        print(timestamp)
         seasons = db_select_imdb_season_list(show_id)
 
-        for season in seasons:
-            season_id = season.get("season")[0]['id']
-            valid_url = True
-            url = "http://www.imdb.com/title/" + show_id + "/episodes?season=" + season_id
-            http = urllib3.PoolManager()
+        for season_list in seasons:
+            for season in season_list.get("season"):
+                season_id = season['id']
+                valid_url = True
+                url = "http://www.imdb.com/title/" + show_id + "/episodes?season=" + season_id
+                http = urllib3.PoolManager()
 
-            # make sure http request is valid
-            try:
-                r = http.request('GET', url)
-            except:
-                valid_url = False
-                print("Problem with URL data returned.")
-                pass
-
-            # print details for console tracking
-            print(order, url)
-
-            # proceed with the process is there's a valid http response
-            if valid_url:
-                # soup the data returned from the http request
-                soup = BeautifulSoup(r.data, 'html.parser')
-
-                # setup soups
+                # make sure http request is valid
                 try:
-                    soup_episode = soup.find_all("div", {"class": lambda l: l and l.startswith('list_item')})
-                except IndexError:
-                    soup_episode = None
+                    r = http.request('GET', url)
+                except:
+                    valid_url = False
+                    print("Problem with URL data returned.")
                     pass
 
-                # parse soups and input data into show dict
-                if soup_episode is not None:
-                    episode_list = []
-                    for episode in soup_episode:
-                        id = episode.find_all('meta')[0]['content'].strip()
-                        name = episode.find_all("div", {"itemprop": "episodes"})[0].find_all('a')[0].get_text().strip()
-                        description = episode.find_all("div", {"itemprop": "description"})[0].get_text().strip()
-                        if "Add a Plot" in description:
-                            description = "Not yet available."
-                        try:
-                            air_date = episode.find_all("div", {"class": "airdate"})[0].get_text().strip()
-                        except IndexError:
-                            print("No air date found.")
-                            air_date = "Not yet available."
-                            pass
-                        image = episode.find_all('img')[0]['src'].strip()
-                        episode_dict = ({"id": id, "name": name, "description": description, "air_date": air_date, "image": image})
-                        episode_list.append(episode_dict)
-                    print(episode_list)
-                    collection_show.update({"id": show_id, "season.id": season_id}, {"$set": {"season.$.episode": episode_list}})
+                # print details for console tracking
+                print(order, url)
+
+                # proceed with the process is there's a valid http response
+                if valid_url:
+                    # soup the data returned from the http request
+                    soup = BeautifulSoup(r.data, 'html.parser')
+
+                    # setup soups
+                    try:
+                        soup_episode = soup.find_all("div", {"class": lambda l: l and l.startswith('list_item')})
+                    except IndexError:
+                        soup_episode = None
+                        pass
+
+                    # parse soups and input data into show dict
+                    if soup_episode is not None:
+                        episode_list = []
+                        for episode in soup_episode:
+                            id = episode.find_all('meta')[0]['content'].strip()
+                            name = episode.find_all("div", {"itemprop": "episodes"})[0].find_all('a')[0].get_text().strip()
+                            description = episode.find_all("div", {"itemprop": "description"})[0].get_text().strip()
+                            if "Add a Plot" in description:
+                                description = "Not yet available."
+                            try:
+                                air_date = episode.find_all("div", {"class": "airdate"})[0].get_text().strip()
+                            except IndexError:
+                                print("No air date found.")
+                                air_date = "Not yet available."
+                                pass
+                            image = episode.find_all('img')[0]['src'].strip()
+                            episode_dict = ({"id": id, "name": name, "description": description, "air_date": air_date, "image": image})
+                            episode_list.append(episode_dict)
+                        collection_show.update({"id": show_id, "season.id": season_id}, {"$unset": {"season.$.episode": 1}}, False, False)
+                        collection_show.update({"id": show_id, "season.id": season_id}, {"$set": {"season.$.episode": episode_list, "season.$.timestamp": timestamp}}, False, True)
+                    else:
+                        print("No season found")
+
+                    count += 1
+
                 else:
-                    print("No season found")
-
-                count += 1
-
-            else:
-                count += 1
+                    count += 1
 
     # print process results
     print("Process complete. ", count-1, "series processed.")
