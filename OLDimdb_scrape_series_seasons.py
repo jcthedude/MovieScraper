@@ -11,7 +11,7 @@ collection_show = db.show
 
 def db_select_imdb_series_list():
     print("Fetching  all series...")
-    id_list = collection_show_list.find({"order": {"$lt": 6}}, {'id': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
+    id_list = collection_show_list.find({"order": {"$gt": 3203}}, {'id': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
 
@@ -27,7 +27,7 @@ def imdb_fetch_series_seasons():
         timestamp = datetime.now()
 
         valid_url = True
-        url = "http://www.imdb.com/title/" + show_id + "/episodes"
+        url = "http://www.imdb.com/title/" + show_id
         http = urllib3.PoolManager()
 
         try:
@@ -42,7 +42,7 @@ def imdb_fetch_series_seasons():
         if valid_url:
             soup = BeautifulSoup(r.data, 'html.parser')
             try:
-                soup_season = soup.find_all("select", {"id": "bySeason"})[0].find_all('option')
+                soup_season = soup.find_all("div", {"class": "seasons-and-year-nav"})[0].find_all('a')
             except IndexError:
                 soup_season = None
                 pass
@@ -54,7 +54,6 @@ def imdb_fetch_series_seasons():
                     if season_id.isdigit() and int(season_id) < 100:
                         season_dict = ({"id": season_id})
                         season_list.append(season_dict)
-                collection_show.update({"id": show_id}, {"$unset": {"season": 1}}, False, False)
                 collection_show.update_one({"id": show_id}, {"$set": {"season": season_list, "timestamp": timestamp}})
             else:
                 print("No season found")
