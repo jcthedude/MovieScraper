@@ -8,7 +8,7 @@ db = client.tv
 collection = db.show_list
 
 
-def imdb_fetch_series_list():
+def imdb_fetch_show_list():
     start_time = datetime.now()
     record_count = 1
     status = 200
@@ -57,6 +57,6 @@ def imdb_fetch_series_list():
     print("Total duration (minutes): ", str(duration.seconds / 60))
 
 
-imdb_fetch_series_list()
+imdb_fetch_show_list()
 
 

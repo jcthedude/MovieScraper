@@ -12,7 +12,7 @@ collection_show = db.show
 
 def db_select_imdb_show_list():
     # fetch the list of all shows to get details for
-    print("Fetching  all series...")
+    print("Fetching  all shows...")
     id_list = collection_show_list.find({"order": {"$lt": 2}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
@@ -106,11 +106,6 @@ def imdb_fetch_show_details():
                 soup_recommended = soup.find_all("div", {"class": "rec_slide"})[0].find_all('a')
             except IndexError:
                 soup_recommended = None
-                pass
-            try:
-                soup_season = soup.find_all("div", {"class": "seasons-and-year-nav"})[0].find_all('a')
-            except IndexError:
-                soup_season = None
                 pass
             try:
                 soup_cast = soup.find_all("table", {"class": "cast_list"})[0]
@@ -212,17 +207,6 @@ def imdb_fetch_show_details():
             else:
                 print("No recommendations found")
 
-            if soup_season is not None:
-                season_list = []
-                for season in soup_season:
-                    season_id = season.get_text().strip()
-                    if season_id.isdigit() and int(season_id) < 100:
-                        season_dict = ({"id": season_id})
-                        season_list.append(season_dict)
-                show.update({"season": season_list})
-            else:
-                print("No season found")
-
             if soup_cast is not None:
                 soup_count = 1
                 actor = []
@@ -267,7 +251,7 @@ def imdb_fetch_show_details():
             count += 1
 
     # print process results
-    print("Process complete. ", count-1, "series processed.")
+    print("Process complete. ", count-1, "shows processed.")
     end_time = datetime.now()
     duration = end_time - start_time
     print("Start time: ", str(start_time))

@@ -11,7 +11,7 @@ collection_show = db.show
 
 def db_select_imdb_show_list():
     # fetch the list of all shows to get details for
-    print("Fetching  all series...")
+    print("Fetching  all shows...")
     id_list = collection_show.find({"order": {"$gt": 960}}, {'id': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
@@ -94,7 +94,7 @@ def imdb_fetch_episode_details():
                             collection_show.update({"id": show_id, "season.id": season_id}, {"$unset": {"season.$.episode": 1}}, False, False)
                             collection_show.update({"id": show_id, "season.id": season_id}, {"$set": {"season.$.episode": episode_list, "season.$.timestamp": timestamp}}, False, True)
                         else:
-                            print("No season found")
+                            print("No seasons found")
 
                         count += 1
 
@@ -105,7 +105,7 @@ def imdb_fetch_episode_details():
                 print("No seasons found for", show_id)
 
     # print process results
-    print("Process complete. ", count-1, "series processed.")
+    print("Process complete. ", count-1, "shows processed.")
     end_time = datetime.now()
     duration = end_time - start_time
     print("Start time: ", str(start_time))
