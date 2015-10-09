@@ -13,7 +13,7 @@ collection_show = db.show
 
 def db_select_show():
     print("Fetching all shows with no TVDB art...")
-    id_list = collection_show.find({"tvdb_id": {"$ne": "N/A"}, "tvdb_art_fetched": {"$exists": False}}, {'id': 1, 'tvdb_id': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
+    id_list = collection_show.find({"tvdb_id": {"$ne": "N/A"}, "tvdb_detail_fetched": {"$exists": False}}, {'id': 1, 'tvdb_id': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
 
@@ -43,7 +43,19 @@ def get_art(order, tvdb_id):
                     poster = node.getElementsByTagName('poster')[0].firstChild.data
                 except AttributeError:
                     poster = None
-                return banner, fanart, poster
+                try:
+                    air_day = node.getElementsByTagName('Airs_DayOfWeek')[0].firstChild.data
+                except AttributeError:
+                    air_day = None
+                try:
+                    air_time = node.getElementsByTagName('Airs_Time')[0].firstChild.data
+                except AttributeError:
+                    air_time = None
+                try:
+                    network = node.getElementsByTagName('Network')[0].firstChild.data
+                except AttributeError:
+                    network = None
+                return banner, fanart, poster, air_day, air_time, network
         except ExpatError as e:
             print("ERROR WITH API PAGE: ", e)
             return None, None, None
@@ -62,7 +74,8 @@ def main_tvdb_art():
         show_id = id['id']
         tvdb_id = id['tvdb_id']
         order = id['order']
-        banner, fanart, poster = get_art(order, tvdb_id)
+        timestamp = datetime.now()
+        banner, fanart, poster, air_day, air_time, network = get_art(order, tvdb_id)
 
         if banner is not None:
             banner = "http://thetvdb.com/banners/" + banner
@@ -82,9 +95,24 @@ def main_tvdb_art():
             collection_show.update_one({"id": show_id}, {"$set": {"poster": poster}})
         else:
             print("No poster found.")
+        if air_day is not None:
+            collection_show.update({"id": show_id}, {"$unset": {"air_day": 1}}, False, False)
+            collection_show.update_one({"id": show_id}, {"$set": {"air_day": air_day}})
+        else:
+            print("No air day found.")
+        if air_time is not None:
+            collection_show.update({"id": show_id}, {"$unset": {"air_time": 1}}, False, False)
+            collection_show.update_one({"id": show_id}, {"$set": {"air_time": air_time}})
+        else:
+            print("No air time found.")
+        if network is not None:
+            collection_show.update({"id": show_id}, {"$unset": {"network": 1}}, False, False)
+            collection_show.update_one({"id": show_id}, {"$set": {"network": network}})
+        else:
+            print("No network found.")
 
-        collection_show.update({"id": show_id}, {"$unset": {"tvdb_art_fetched": 1}}, False, False)
-        collection_show.update_one({"id": show_id}, {"$set": {"tvdb_art_fetched": True}})
+        collection_show.update({"id": show_id}, {"$unset": {"tvdb_detail_fetched": 1, "tvdb_detail_timestamp": 1}}, False, False)
+        collection_show.update_one({"id": show_id}, {"$set": {"tvdb_detail_fetched": True, "tvdb_detail_timestamp": timestamp}})
 
         count += 1
 
