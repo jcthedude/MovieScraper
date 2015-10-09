@@ -65,7 +65,7 @@ def imdb_fetch_show_seasons():
         else:
             count += 1
 
-    print("Process complete. ", count-1, "shows processed.")
+    print("Process complete. ", count - 1, "shows processed.")
     end_time = datetime.now()
     duration = end_time - start_time
     print("Start time: ", str(start_time))
