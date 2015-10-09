@@ -15,8 +15,7 @@ def imdb_fetch_show_list():
     order = 1
 
     while status == 200:
-        url = "http://www.imdb.com/search/title?languages=en|1&count=250&title_type=tv_series&sort=moviemeter,asc" \
-              "&view=simple&start=" + str(record_count)
+        url = "http://www.imdb.com/search/title?languages=en|1&count=250&title_type=tv_series&sort=moviemeter,asc&view=simple&start=" + str(record_count)
         http = urllib3.PoolManager()
         r = http.request('GET', url)
         show_list = []
@@ -36,10 +35,7 @@ def imdb_fetch_show_list():
             link = row_content.get('href')
             id = link[7:-1]
 
-            show = {"id": id,
-                "name": name,
-                "order": order,
-                "timestamp": datetime.now()}
+            show = {"id": id, "name": name, "order": order, "timestamp": datetime.now()}
             print("Adding to list: ", order, id, name)
             show_list.append(show)
 

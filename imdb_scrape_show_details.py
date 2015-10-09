@@ -196,8 +196,7 @@ def imdb_fetch_show_details():
                             recommend_image = rec.find_all('img')[0]['loadlate']
                         except:
                             recommend_image = rec.find_all('img')[0]['src']
-                        recommendation_dict = ({"id": recommend_id, "name": recommend_name, "order": soup_count
-                                                , "image": recommend_image})
+                        recommendation_dict = ({"id": recommend_id, "name": recommend_name, "order": soup_count, "image": recommend_image})
                         recommendation_list.append(recommendation_dict)
                         soup_count += 1
                     except IndexError:
@@ -234,8 +233,7 @@ def imdb_fetch_show_details():
                 i = 0
                 actor_details_list = []
                 while i < soup_count - 1:
-                    actor_details = ({"id": actor[i]["id"], "name": actor[i]["name"], "order": actor[i]["order"]
-                                     , "image": actor[i]["image"], "character": character[i]})
+                    actor_details = ({"id": actor[i]["id"], "name": actor[i]["name"], "order": actor[i]["order"], "image": actor[i]["image"], "character": character[i]})
                     actor_details_list.append(actor_details)
                     i += 1
                 show.update({"cast": actor_details_list})
