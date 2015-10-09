@@ -55,7 +55,7 @@ def imdb_fetch_show_seasons():
                         season_dict = ({"id": season_id})
                         season_list.append(season_dict)
                 collection_show.update({"id": show_id}, {"$unset": {"season": 1}}, False, False)
-                collection_show.update_one({"id": show_id}, {"$set": {"season": season_list, "timestamp": timestamp}})
+                collection_show.update_one({"id": show_id}, {"$set": {"season": season_list, "timestamp": timestamp, "season_fetched": True}})
             else:
                 print("No seasons found")
 
