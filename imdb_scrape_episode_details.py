@@ -92,7 +92,7 @@ def imdb_fetch_episode_details():
                                 episode_dict = ({"id": id, "name": name, "description": description, "air_date": air_date, "image": image})
                                 episode_list.append(episode_dict)
                             collection_show.update({"id": show_id, "season.id": season_id}, {"$unset": {"season.$.episode": 1}}, False, False)
-                            collection_show.update({"id": show_id, "season.id": season_id}, {"$set": {"season.$.episode": episode_list, "season.$.timestamp": timestamp}}, False, True)
+                            collection_show.update({"id": show_id, "season.id": season_id}, {"$set": {"season.$.episode": episode_list, "season.$.timestamp": timestamp}})
                         else:
                             print("No episode found")
 
