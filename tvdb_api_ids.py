@@ -45,7 +45,7 @@ def get_tvdb_id(order, show_id):
         return None
 
 
-def main_tvdb_id():
+def main():
     start_time = datetime.now()
     ids = db_select_show()
     count = 1
@@ -73,4 +73,4 @@ def main_tvdb_id():
     print("Total duration (minutes): ", str(duration.seconds / 60))
 
 
-main_tvdb_id()
+main()

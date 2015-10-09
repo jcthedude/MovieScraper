@@ -18,7 +18,7 @@ def db_select_show():
     return id_list
 
 
-def get_art(order, tvdb_id):
+def get_show_details(order, tvdb_id):
     url = "http://thetvdb.com/api/" + api_key + "/series/" + str(tvdb_id) + "/all"
 
     http = urllib3.PoolManager()
@@ -65,7 +65,7 @@ def get_art(order, tvdb_id):
         return None, None, None
 
 
-def main_tvdb_art():
+def main():
     start_time = datetime.now()
     ids = db_select_show()
     count = 1
@@ -75,7 +75,7 @@ def main_tvdb_art():
         tvdb_id = id['tvdb_id']
         order = id['order']
         timestamp = datetime.now()
-        banner, fanart, poster, air_day, air_time, network = get_art(order, tvdb_id)
+        banner, fanart, poster, air_day, air_time, network = get_show_details(order, tvdb_id)
 
         if banner is not None:
             banner = "http://thetvdb.com/banners/" + banner
@@ -124,4 +124,4 @@ def main_tvdb_art():
     print("Total duration (minutes): ", str(duration.seconds / 60))
 
 
-main_tvdb_art()
+main()
