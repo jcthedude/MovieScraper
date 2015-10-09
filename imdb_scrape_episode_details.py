@@ -94,14 +94,16 @@ def imdb_fetch_episode_details():
                             collection_show.update({"id": show_id, "season.id": season_id}, {"$unset": {"season.$.episode": 1}}, False, False)
                             collection_show.update({"id": show_id, "season.id": season_id}, {"$set": {"season.$.episode": episode_list, "season.$.timestamp": timestamp}}, False, True)
                         else:
-                            print("No seasons found")
+                            print("No episode found")
 
                         count += 1
+                        collection_show.update_one({"id": show_id}, {"$set": {"episode_fetched": True}})
 
                     else:
                         count += 1
             else:
                 count += 1
+                collection_show.update_one({"id": show_id}, {"$set": {"episode_fetched": True}})
                 print("No seasons found for", show_id)
 
     # print process results
