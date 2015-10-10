@@ -79,9 +79,14 @@ def imdb_fetch_episode_details():
                             for episode in soup_episode:
                                 id = episode.find_all('meta')[0]['content'].strip()
                                 name = episode.find_all("div", {"itemprop": "episodes"})[0].find_all('a')[0].get_text().strip()
-                                description = episode.find_all("div", {"itemprop": "description"})[0].get_text().strip()
-                                if "Add a Plot" in description:
+                                try:
+                                    description = episode.find_all("div", {"itemprop": "description"})[0].get_text().strip()
+                                    if "Add a Plot" in description:
+                                        description = "Not yet available."
+                                except IndexError:
+                                    print("No description found.")
                                     description = "Not yet available."
+                                    pass
                                 try:
                                     air_date = episode.find_all("div", {"class": "airdate"})[0].get_text().strip()
                                 except IndexError:
