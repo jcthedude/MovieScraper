@@ -12,7 +12,7 @@ collection_show = db.show
 def db_select_imdb_show_list():
     # fetch the list of all shows to get details for
     print("Fetching all shows...")
-    id_list = collection_show.find({"order": {"$gt": 0}}, {'id': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
+    id_list = collection_show.find({"order": {"$gt": 23297}}, {'id': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
 
     return id_list
 
@@ -93,7 +93,10 @@ def imdb_fetch_episode_details():
                                     print("No air date found.")
                                     air_date = "Not yet available."
                                     pass
-                                image = episode.find_all('img')[0]['src'].strip()
+                                try:
+                                    image = episode.find_all('img')[0]['src'].strip()
+                                except KeyError:
+                                    image = "http://ia.media-imdb.com/images/G/01/imdb/images/nopicture/200x112/tv-3053553855._CB332471307_.png"
                                 episode_dict = ({"id": id, "name": name, "description": description, "air_date": air_date, "image": image})
                                 episode_list.append(episode_dict)
                             collection_show.update({"id": show_id, "season.id": season_id}, {"$unset": {"season.$.episode": 1}}, False, False)

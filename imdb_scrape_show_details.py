@@ -215,9 +215,9 @@ def imdb_fetch_show_details():
                     try:
                         try:
                             actor_image = cast.find_all('img')[0]['loadlate']
-                        except:
+                        except KeyError:
                             actor_image = cast.find_all('img')[0]['src']
-                    except:
+                    except KeyError:
                         actor_image = "http://ia.media-imdb.com/images/G/01/imdb/images/nopicture/32x44/name-2138558783._CB379389446_.png"
                     actor_dict = ({"id": actor_id, "name": actor_name, "order": soup_count, "image": actor_image})
                     actor.append(actor_dict)
