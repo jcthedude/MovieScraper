@@ -1,12 +1,7 @@
+from globals import *
 import urllib3
 from bs4 import BeautifulSoup
-from pymongo import MongoClient
 from datetime import datetime
-
-client = MongoClient("mongodb://admin:Campana1@107.170.248.43:27017")
-db = client.tv
-collection_show_list = db.show_list
-collection_show = db.show
 
 
 def db_select_imdb_show_list():

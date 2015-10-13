@@ -1,14 +1,8 @@
+from globals import *
 import urllib3
-from pymongo import MongoClient
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 from datetime import datetime
-
-api_key = "58AE0E6345017543"
-
-client = MongoClient("mongodb://admin:Campana1@107.170.248.43:27017")
-db = client.tv
-collection_show = db.show
 
 
 def db_select_show():
@@ -19,7 +13,7 @@ def db_select_show():
 
 
 def get_show_details(order, tvdb_id):
-    url = "http://thetvdb.com/api/" + api_key + "/series/" + str(tvdb_id) + "/all"
+    url = "http://thetvdb.com/api/" + tvdb_api_key + "/series/" + str(tvdb_id) + "/all"
 
     http = urllib3.PoolManager()
     r = http.request('GET', url)

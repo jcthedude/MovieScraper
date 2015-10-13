@@ -1,11 +1,7 @@
+from globals import *
 import urllib3
 from bs4 import BeautifulSoup
-from pymongo import MongoClient
 from datetime import datetime
-
-client = MongoClient("mongodb://admin:Campana1@107.170.248.43:27017")
-db = client.tv
-collection = db.show_list
 
 
 def imdb_fetch_show_list():
@@ -41,7 +37,7 @@ def imdb_fetch_show_list():
 
             order += 1
 
-        collection.insert_many(show_list)
+        collection_show_list.insert_many(show_list)
         print("Bulk insert complete.")
         record_count += 250
 
