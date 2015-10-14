@@ -1,7 +1,9 @@
-from globals import *
+from datetime import datetime
+
 import urllib3
 from bs4 import BeautifulSoup
-from datetime import datetime
+
+from globals import *
 
 
 def db_select_imdb_show_list():
