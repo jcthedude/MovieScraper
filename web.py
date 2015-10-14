@@ -1,10 +1,16 @@
-from flask import Flask
+from globals import *
+from flask import Flask, render_template
+
+
 application = Flask(__name__)
 
 
 @application.route("/")
-def hello():
-    return "<h1 style='color:blue'>Testing!</h1>"
+def get_shows():
+    _shows = collection_show.find({"order": {"$lte": 100}}, {'id': 1, 'name': 1, 'order': 1, '_id': 0}).sort([("order", 1)])
+    shows = [show for show in _shows]
+
+    return render_template('tv.html', shows=shows)
 
 if __name__ == "__main__":
-    application.run(host='0.0.0.0')
+    application.run(host='0.0.0.0', debug=True)
